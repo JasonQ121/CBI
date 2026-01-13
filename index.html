@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业市场竞争力自测</title>
+    <script>
+        // Chart.js 加载状态
+        let chartJSLoaded = false;
+        let chartJSLoadPromise = null;
+        
+        // 尝试加载 Chart.js（主CDN）
+        function loadChartJS() {
+            if (chartJSLoadPromise) {
+                return chartJSLoadPromise;
+            }
+            
+            chartJSLoadPromise = new Promise((resolve, reject) => {
+                // 如果已经加载，直接返回
+                if (typeof Chart !== 'undefined') {
+                    chartJSLoaded = true;
+                    resolve();
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+                script.async = true;
+                
+                script.onload = function() {
+                    chartJSLoaded = true;
+                    console.log('Chart.js 加载成功');
+                    resolve();
+                };
+                
+                script.onerror = function() {
+                    console.warn('主CDN加载失败，尝试备用CDN');
+                    // 尝试备用CDN
+                    loadBackupChartJS().then(resolve).catch(reject);
+                };
+                
+                document.head.appendChild(script);
+            });
+            
+            return chartJSLoadPromise;
+        }
+        
+        // 备用CDN
+        function loadBackupChartJS() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
+                script.async = true;
+                
+                script.onload = function() {
+                    chartJSLoaded = true;
+                    console.log('Chart.js 从备用CDN加载成功');
+                    resolve();
+                };
+                
+                script.onerror = function() {
+                    console.error('所有CDN都加载失败');
+                    chartJSLoaded = false;
+                    reject(new Error('Chart.js 加载失败'));
+                };
+                
+                document.head.appendChild(script);
+            });
+        }
+        
+        // 页面加载时开始加载 Chart.js
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadChartJS);
+        } else {
+            loadChartJS();
+        }
+        
+        // 处理存储访问被阻止的情况（浏览器跟踪防护）
+        // 这个警告不影响应用功能，可以安全忽略
+        window.addEventListener('error', function(e) {
+            if (e.message && e.message.includes('Tracking Prevention')) {
+                // 忽略跟踪防护相关的错误，不影响功能
+                e.preventDefault();
+                return false;
+            }
+        }, true);
+        
+        // 捕获控制台警告
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('Tracking Prevention')) {
+                // 忽略跟踪防护警告
+                return;
+            }
+            originalWarn.apply(console, args);
+        };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Supabase 客户端库 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase 配置文件（需要用户自己创建并填入密钥） -->
+    <script src="config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 40px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 32px;
+        }
+
+        h2 {
+            color: #555;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* 业务类型选择 */
+        .business-type-options {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin: 40px 0;
+        }
+
+        .business-type-card {
+            flex: 1;
+            max-width: 300px;
+            padding: 40px 30px;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f9f9f9;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            pointer-events: auto;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .business-type-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .business-type-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .business-type-card h3 {
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        /* 答题界面 */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .question-container {
+            margin-bottom: 30px;
+        }
+
+        .question-number {
+            color: #667eea;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .dimension-label {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .question-text {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+
+        .slider-container {
+            margin: 30px 0;
+        }
+
+        .slider-wrapper {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .slider-value {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            display: block;
+            margin: 20px auto;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        /* 结果展示 */
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .result-card {
+            background: #f9f9f9;
+            border-radius: 15px;
+            padding: 25px;
+        }
+
+        .result-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        .cbi-gauge {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .cbi-score {
+            font-size: 64px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .quadrant-chart {
+            position: relative;
+            width: 100%;
+            height: 450px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            margin: 20px 0;
+            background: #fafafa;
+            padding: 50px 60px 50px 60px;
+        }
+
+        .quadrant-axis {
+            position: absolute;
+            background: #333;
+        }
+
+        .quadrant-axis-x {
+            width: 2px;
+            height: calc(100% - 100px);
+            left: 60px;
+            bottom: 50px;
+        }
+
+        .quadrant-axis-y {
+            width: calc(100% - 120px);
+            height: 2px;
+            left: 60px;
+            bottom: 50px;
+        }
+
+        .quadrant-label {
+            position: absolute;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .axis-label-x {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .axis-label-y {
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+        }
+
+        .quadrant-point {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #667eea;
+            border: 3px solid white;
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.6);
+            transform: translate(-50%, 50%);
+            z-index: 10;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quadrant-point:hover {
+            width: 20px;
+            height: 20px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.8);
+        }
+
+        .quadrant-type {
+            position: absolute;
+            font-size: 18px;
+            font-weight: bold;
+            color: #666;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+        }
+
+        .quadrant-type.top-left {
+            top: 20px;
+            left: 20px;
+            color: #4caf50;
+        }
+
+        .quadrant-type.top-right {
+            top: 20px;
+            right: 20px;
+            color: #ff9800;
+        }
+
+        .quadrant-type.bottom-left {
+            bottom: 20px;
+            left: 20px;
+            color: #2196f3;
+        }
+
+        .quadrant-type.bottom-right {
+            bottom: 20px;
+            right: 20px;
+            color: #f44336;
+        }
+
+        .axis-tick {
+            position: absolute;
+            background: #999;
+        }
+
+        .axis-tick-x {
+            width: 1px;
+            height: 8px;
+            bottom: 50px;
+        }
+
+        .axis-tick-y {
+            width: 8px;
+            height: 1px;
+            left: 60px;
+        }
+
+        .axis-tick-label {
+            position: absolute;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .axis-tick-label-x {
+            bottom: 35px;
+            transform: translateX(-50%);
+        }
+
+        .axis-tick-label-y {
+            left: 45px;
+            transform: translateY(-50%);
+        }
+
+        .center-line {
+            position: absolute;
+            background: #ddd;
+            opacity: 0.5;
+        }
+
+        .center-line-x {
+            width: 1px;
+            height: calc(100% - 100px);
+            left: 60px;
+            bottom: 50px;
+        }
+
+        .center-line-y {
+            width: calc(100% - 120px);
+            height: 1px;
+            left: 60px;
+            bottom: 50px;
+        }
+
+        .diagnosis-result {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .diagnosis-type {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .diagnosis-desc {
+            font-size: 18px;
+            line-height: 1.8;
+        }
+
+        /* 留资表单 */
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .dimension-scores {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .dimension-score-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .dimension-score-item .name {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .dimension-score-item .score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 业务类型选择界面 -->
+        <div class="screen active" id="selectionScreen">
+            <h1>企业市场竞争力自测</h1>
+            <h2 style="text-align: center; margin-bottom: 40px;">请选择您的业务类型</h2>
+            <div class="business-type-options">
+                <div class="business-type-card" data-type="toc">
+                    <h3>To C 业务</h3>
+                    <p>面向消费者的业务模式</p>
+                </div>
+                <div class="business-type-card" data-type="tob">
+                    <h3>To B 业务</h3>
+                    <p>面向企业的业务模式</p>
+                </div>
+            </div>
+            <button class="btn" id="startBtn" disabled>开始测试</button>
+        </div>
+
+        <!-- 答题界面 -->
+        <div class="screen" id="quizScreen">
+            <h1>企业市场竞争力自测</h1>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="question-container" id="questionContainer"></div>
+            <div class="navigation-buttons">
+                <button class="btn btn-secondary" id="prevBtn" style="display: none;">上一题</button>
+                <button class="btn" id="nextBtn">下一题</button>
+            </div>
+        </div>
+
+        <!-- 结果展示界面 -->
+        <div class="screen" id="resultScreen">
+            <h1>测评结果</h1>
+            
+            <div class="diagnosis-result" id="diagnosisResult"></div>
+            
+            <div class="result-grid">
+                <div class="result-card">
+                    <h3>四宫格定位分析</h3>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <img src="data:image/svg+xml,%3Csvg width='400' height='400' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='400' height='400' fill='%23fafafa' stroke='%23e0e0e0' stroke-width='2'/%3E%3Cline x1='200' y1='0' x2='200' y2='400' stroke='%23333' stroke-width='2'/%3E%3Cline x1='0' y1='200' x2='400' y2='200' stroke='%23333' stroke-width='2'/%3E%3Ctext x='200' y='20' text-anchor='middle' font-size='14' fill='%23333'%3E组织能力%3C/text%3E%3Ctext x='20' y='200' text-anchor='middle' font-size='14' fill='%23333' transform='rotate(-90 20 200)'%3E业绩能力%3C/text%3E%3Ctext x='100' y='30' font-size='16' font-weight='bold' fill='%234caf50'%3E领跑型%3C/text%3E%3Ctext x='300' y='30' font-size='16' font-weight='bold' fill='%23ff9800'%3E虚火型%3C/text%3E%3Ctext x='100' y='380' font-size='16' font-weight='bold' fill='%232196f3'%3E内耗型%3C/text%3E%3Ctext x='300' y='380' font-size='16' font-weight='bold' fill='%23f44336'%3E生存型%3C/text%3E%3C/svg%3E" alt="四宫格定位图" style="max-width: 100%; height: auto; border-radius: 10px;">
+                    </div>
+                    <div id="quadrantDescription" style="padding: 20px; background: #f9f9f9; border-radius: 10px; margin-top: 20px;">
+                        <!-- 象限描述将在这里显示 -->
+                    </div>
+                </div>
+                
+                <div class="result-card">
+                    <h3>CBI 竞争力指数</h3>
+                    <div class="cbi-gauge">
+                        <div class="cbi-score" id="cbiScore">0</div>
+                        <div>竞争力指数</div>
+                    </div>
+                    <div id="cbiDiagnosis" style="margin-top: 20px; padding: 20px; background: #f9f9f9; border-radius: 10px; line-height: 1.8; color: #333;">
+                        <!-- CBI诊断分析将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-card">
+                <h3>七结构雷达图</h3>
+                <div class="chart-container">
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+
+            <div class="result-card">
+                <h3>结构得分详情</h3>
+                <div class="dimension-scores" id="dimensionScores"></div>
+            </div>
+
+            <button class="btn" id="getReportBtn">获取详细诊断资料</button>
+        </div>
+
+        <!-- 留资界面 -->
+        <div class="screen" id="contactScreen">
+            <h1>获取详细诊断资料</h1>
+            <p style="text-align: center; color: #666; margin-bottom: 30px;">请填写以下信息，我们将为您提供详细的诊断资料</p>
+            
+            <form id="contactForm">
+                <div class="form-group">
+                    <label>姓名 *</label>
+                    <input type="text" id="userName" required placeholder="请输入您的姓名">
+                </div>
+                <div class="form-group">
+                    <label>公司名称 *</label>
+                    <input type="text" id="companyName" required placeholder="请输入公司名称">
+                </div>
+                <div class="form-group">
+                    <label>联系电话 *</label>
+                    <input type="tel" id="userPhone" required placeholder="请输入联系电话">
+                </div>
+                <button type="submit" class="btn">提交以获取详细诊断资料</button>
+            </form>
+        </div>
+
+        <!-- 提交成功界面 -->
+        <div class="screen" id="successScreen">
+            <div style="text-align: center; max-width: 600px; margin: 0 auto;">
+                <div style="font-size: 80px; color: #667eea; margin-bottom: 30px;">✓</div>
+                <h1 style="color: #333; margin-bottom: 20px; font-size: 32px;">感谢您的参与</h1>
+                <p style="color: #666; margin-bottom: 40px; line-height: 1.8; font-size: 18px;">
+                    我们会有资深的行业顾问联系您
+                </p>
+                <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                    <p style="color: #999; font-size: 14px; line-height: 1.6;">
+                        您的测评数据已成功提交<br>
+                        请保持电话畅通，我们的顾问将在近期与您取得联系
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 题目数据结构 - 8个结构，每个结构3道题
+        const dimensions = ['需求', '价值', '渠道', '壁垒', '管理', '能力', '激励', '数字化转型'];
+        
+        // Supabase 客户端初始化
+        let supabaseClient = null;
+        if (typeof window.SUPABASE_CONFIG !== 'undefined' && window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.publishableKey) {
+            try {
+                supabaseClient = supabase.createClient(
+                    window.SUPABASE_CONFIG.url,
+                    window.SUPABASE_CONFIG.publishableKey
+                );
+                console.log('Supabase 客户端初始化成功');
+            } catch (error) {
+                console.error('Supabase 客户端初始化失败:', error);
+            }
+        } else {
+            console.warn('Supabase 配置未找到，将使用 localStorage 作为备用方案');
+        }
+        
+        // 结构名称映射（从JSON格式到代码格式）
+        const dimensionNameMap = {
+            '需求结构': { name: '需求', index: 0 },
+            '价值结构': { name: '价值', index: 1 },
+            '渠道结构': { name: '渠道', index: 2 },
+            '壁垒结构': { name: '壁垒', index: 3 },
+            '管理结构': { name: '管理', index: 4 },
+            '能力结构': { name: '能力', index: 5 },
+            '激励结构': { name: '激励', index: 6 },
+            '竞争壁垒': { name: '壁垒', index: 3 }, // 竞争壁垒也映射到壁垒结构
+            '数字化转型': { name: '数字化转型', index: 7 } // 数字化转型作为独立结构
+        };
+        
+        // B端业务题目数据
+        const tobQuestionsData = {
+            "B端业务自测题": [
+                {
+                    "dimension": "需求结构",
+                    "questions": [
+                        "针对核心大客户，业务团队会书面绘制详尽的\"组织影响图谱\"，不仅包含采购人信息，更清晰标注了决策者（拍板人）、影响者（技术或财务）、使用者（一线人员）各自的利益诉求、担忧点及性格偏好，并以此制定对应的公关和交付策略。",
+                        "业务团队不仅关注产品销售，还投入专门精力研究大客户所处的行业趋势及竞争对手动态。我们能主动向客户提供具有行业洞察力的增值信息或风险预警，使其感受到我们是在帮他们\"解决业务增长问题\"，而不仅是\"提供一个工具\"。",
+                        "团队在接触客户时，不仅关注产品功能，还会通过标准的访谈或调研工具，主动挖掘该客户不同层级的真实诉求（例如：采购关注\"合规与比价\"、技术关注\"参数与稳定性\"、老板关注\"对战略的支撑\"），并形成清晰的\"客户价值需求清单\"。"
+                    ]
+                },
+                {
+                    "dimension": "价值结构",
+                    "questions": [
+                        "团队在向客户提案或交付时，能够拿出一套逻辑严密的\"收益计算模型\"，清晰展示我们的产品如何帮客户省了多少钱、提了多少效或避了多少坑，而不是仅靠感性的\"质量好、信誉好\"来打动客户。",
+                        "公司针对发现的差异化价值诉求，具备灵活的解决方案库。我们能够像\"搭积木\"一样，根据客户具体的痛点（如：是追求成本极致节约，还是追求技术领先，或是追求售后无忧），从产品和服务中快速组合出最契合对方的差异化方案，而非推销单一的标准化方案。",
+                        "在面对竞争时，团队能够针对该客户最核心的\"痛点点位\"，拿出专门的论证方案或实测数据，向客户证明：\"在您最关心的这1-2个问题上，我们是如何做到比同行更有针对性、效果更好的\"。这种\"点对点\"的价值证明已成为我们的竞标标准动作。"
+                    ]
+                },
+                {
+                    "dimension": "渠道结构",
+                    "questions": [
+                        "团队不仅是在找\"意向公司\"，更是在寻找触达\"关键决策人（DMU）\"的有效路径。我们会通过行业专家背书、上下游合作伙伴引荐、或高质量的线下闭门交流会等方式，建立与决策层的高频连接，而非单纯依赖枯燥的电话推销或陌生拜访。",
+                        "公司定期（如每月/每季）在客户关注的专业媒体、行业协会或技术论坛上发布案例、深度文章或演讲，将公司包装成该细分领域的\"专家\"或\"标准制定者\"，从而让精准的潜在客户在产生需求时，能主动通过专业渠道找到我们。",
+                        "公司建立了一套标准的\"老带新\"或\"战略伙伴\"奖励机制，业务团队会定期对满意度高的老客户进行深度经营，将其转化为我们的\"外部推荐官\"，通过他们的圈子渗透到同类型的精准新客户中，使\"关系链\"成为最低成本且最精准的获客渠道。"
+                    ]
+                },
+                {
+                    "dimension": "管理结构",
+                    "questions": [
+                        "针对日常业务中的突发状况（如客户投诉、紧急调货、方案微调），公司已形成清晰的\"授权手册\"，一线主管或业务员无需层层请示即可在规定权限内自主决策，确保响应速度能够跑赢竞争对手。",
+                        "内部信息流转透明，不同部门（如销售与交付、市场与财务）之间不再依赖漫长的\"公文/邮件流转\"或老板协调，而是围绕具体的\"客户项目\"建立临时小组，通过高频、非正式的沟通快速解决问题。",
+                        "公司管理层会定期（如每半年）带领核心员工共同审视现有的管理规定和业务流程，主动砍掉那些\"为了管理而管理\"、对客户价值和工作效率没有贡献的冗余环节，保持组织的\"轻量化\"运作。"
+                    ]
+                },
+                {
+                    "dimension": "能力结构",
+                    "questions": [
+                        "公司能够清晰界定哪些是底层核心能力（如：特殊的生产工艺、大客户经营方法论等），并投入重金自建团队。同时，这些能力已被提炼为可复制的内部教材或SOP（标准作业程序），不因某个核心员工离职而导致能力丧失。",
+                        "团队具备极强的\"不为我所有，但为我所用\"的开放意识。对于非核心环节（如：品牌设计、基础研发支持、地推团队等），能够娴熟地通过外包、战略合作、咨询顾问等方式借用外部高水平资源，以极低成本实现组织功能的扩充。",
+                        "公司具备系统的\"十字型\"人才培养计划。员工不仅在本职岗位专业，还被鼓励通过内部轮岗或交叉培训，掌握相邻岗位的基本逻辑，从而在业务高峰期实现团队内部的灵活调度。"
+                    ]
+                },
+                {
+                    "dimension": "激励结构",
+                    "questions": [
+                        "奖金发放不只看单一的业绩指标，而是与\"公司战略目标高度挂钩。例如：成功开发出符合\"需求结构\"的战略级新客户，或交付了具有\"差异化价值\"的项目，会有额外的奖励权重。",
+                        "公司敢于拉开激励差距，建立\"能者极多得\"的分配机制。在同一职级内，前20%的顶尖人才与平均水平的报酬差距足够大，确保公司资源集中奖励那些真正为\"竞争壁垒\"做出贡献的核心骨干，而非平均用力。",
+                        "激励不仅限于钱。公司有一套针对核心人才的长期激励方案（如：合伙人机制、专业进修机会、参与重大决策权等），让员工清晰感知到：在这里干活，不仅是赚现在的钱，还能通过组织平台实现个人职场价值的持续溢价。"
+                    ]
+                },
+                {
+                    "dimension": "数字化转型",
+                    "questions": [
+                        "从客户初次触达（渠道）、到合同执行（价值）、再到售后维护，每一个关键节点都有数字系统（如CRM、进销存或简易自建表）实时记录。管理层能够随时调取真实的业务进度和转化数据，而非通过听取下属口头汇报来掌握情况。",
+                        "公司的日常管理动作（如：审批、跨部门协作、知识共享、任务指派）均通过数字化工具（如：钉钉、飞书、企业微信或专业办公系统）沉淀。信息流转不再依赖于\"人找人\"，而是通过系统实现的自动化提醒和进度追踪，极大地降低了沟通的\"摩擦力\"。",
+                        "公司积极引导员工使用前沿技术工具（如：AI写作/绘图辅助、自动化营销机器人、数据分析插件等）来赋能业务。这些工具不仅提高了员工的单位产出（人效），更让原本需要高阶专业人才才能完成的任务，通过工具辅助变成了普通员工也能达到的标准动作。"
+                    ]
+                },
+                {
+                    "dimension": "竞争壁垒",
+                    "questions": [
+                        "公司能够清晰识别出哪些是竞争对手\"花钱也买不走\"的核心资产（如：独特的品牌心智、专利技术、行业标准话语权、或者独有的特许经营权），并有专门的预算和动作去持续强化、保护这些资产，使其随时间推移不断增厚。",
+                        "公司在交付产品或服务的过程中，刻意增加了与客户的\"粘性深度\"。通过服务集成、数据连接、会员情感联结或业务流程的深度嵌入，使得客户如果转向竞争对手，将面临极大的时间成本、经济损失或心理压力。",
+                        "公司不仅关注利润，更关注\"效率壁垒\"。我们通过工艺改进、供应链优化或组织提效，使得公司在维持同等价值产出的前提下，具备比行业平均水平更低的成本结构，或者更快的周转速度，让对手在发动价格战时无从下手。"
+                    ]
+                }
+            ]
+        };
+
+        // C端业务题目数据
+        const tocQuestionsData = [
+            {
+                "dimension": "需求结构",
+                "questions": [
+                    "公司建立并运行着一套动态的客户数据库，能够基于客户的消费行为、生活场景、潜在痛点等多维度标签进行精细化分类（例如：不再只是\"30岁女性\"，而是\"注重健康、对添加剂敏感、有晨跑习惯的职场宝妈\"），且市场动作会根据不同标签人群进行差异化定制。",
+                    "管理层和核心业务团队保持着定期走进一线（如店面、社群或直播间）的习惯，直接与消费者进行深度交流或观察其购买行为，并将收集到的第一手反馈转化为具体的\"产品优化清单\"或\"服务改进建议\"，而非仅看纸面销售报表。",
+                    "在任何重大的产品升级或营销活动大规模投入前，公司已形成一套标准流程，先邀请核心老客户或种子用户进行小范围\"压力测试\"或\"内测访谈\"，基于真实的使用反馈来修正方案，确保上线即符合市场真实预期。"
+                ]
+            },
+            {
+                "dimension": "价值结构",
+                "questions": [
+                    "公司已提炼出能够让客户一听就懂、并与其他对手拉开显著差距的\"核心价值点\"（例如：不是卖衣服，而是卖\"不皱的衬衫\"）。所有的门头、主图、详情页及店员口径，都高度聚焦在这个点上，绝不堆砌冗余卖点。",
+                    "公司针对选定的\"核心价值\"，设计了具体的、可感知的服务环节。例如：承诺\"不满意包退\"不只是口号，而是有一套标准的\"秒退\"流程，确保客户在最关键的价值点上获得远超行业水平的实际体验。",
+                    "公司定期（如每半年）深度拆解本地或同赛道前三名对手的优劣势，并刻意在产品或服务上做出\"反向设计\"（例如：对手做大而全，我们做小而美；对手做低价走量，我们做高质陪跑），以确保我们在客户眼中具有唯一的替代性。"
+                ]
+            },
+            {
+                "dimension": "渠道结构",
+                "questions": [
+                    "公司不盲目跟风投流，而是根据\"需求结构\"中定义的客户画像，通过数据分析或小量测试，明确锁定了客户高频出现的3-5个核心渠道（如：特定的小红书话题、线下社区、或垂直社群），并针对不同渠道的属性制定了差异化的内容表达。",
+                    "公司建立了一套清晰的渠道账本，定期会核算每一个获客来源的真实成本和转化率。对于转化效率低、客群不精准的渠道，团队能够迅速复盘并做出停损或优化决策，而非凭感觉持续投入。",
+                    "任何渠道带来的新客户，公司都有一套标准化的流程（如：扫码领券、添加专属顾问、关注公众号等）将其沉淀到公司自有的私域阵地中，并配套了持续的运营动作，确保获客不只是\"一锤子买卖\"，而是能产生后续的复购或推荐。"
+                ]
+            },
+            {
+                "dimension": "管理结构",
+                "questions": [
+                    "针对日常业务中的突发状况（如客户投诉、紧急调货、方案微调），公司已形成清晰的\"授权手册\"，一线主管或业务员无需层层请示即可在规定权限内自主决策，确保响应速度能够跑赢竞争对手。",
+                    "内部信息流转透明，不同部门（如销售与交付、市场与财务）之间不再依赖漫长的\"公文/邮件流转\"或老板协调，而是围绕具体的\"客户项目\"建立临时小组，通过高频、非正式的沟通快速解决问题。",
+                    "公司管理层会定期（如每半年）带领核心员工共同审视现有的管理规定和业务流程，主动砍掉那些\"为了管理而管理\"、对客户价值和工作效率没有贡献的冗余环节，保持组织的\"轻量化\"运作。"
+                ]
+            },
+            {
+                "dimension": "能力结构",
+                "questions": [
+                    "公司能够清晰界定哪些是底层核心能力（如：特殊的生产工艺、大客户经营方法论等），并投入重金自建团队。同时，这些能力已被提炼为可复制的内部教材或SOP（标准作业程序），不因某个核心员工离职而导致能力丧失。",
+                    "团队具备极强的\"不为我所有，但为我所用\"的开放意识。对于非核心环节（如：品牌设计、基础研发支持、地推团队等），能够娴熟地通过外包、战略合作、咨询顾问等方式借用外部高水平资源，以极低成本实现组织功能的扩充。",
+                    "公司具备系统的\"十字型\"人才培养计划。员工不仅在本职岗位专业，还被鼓励通过内部轮岗或交叉培训，掌握相邻岗位的基本逻辑，从而在业务高峰期实现团队内部的灵活调度。"
+                ]
+            },
+            {
+                "dimension": "激励结构",
+                "questions": [
+                    "奖金发放不只看单一的业绩指标，而是与\"公司战略目标高度挂钩。例如：成功开发出符合\"需求结构\"的战略级新客户，或交付了具有\"差异化价值\"的项目，会有额外的奖励权重。",
+                    "公司敢于拉开激励差距，建立\"能者极多得\"的分配机制。在同一职级内，前20%的顶尖人才与平均水平的报酬差距足够大，确保公司资源集中奖励那些真正为\"竞争壁垒\"做出贡献的核心骨干，而非平均用力。",
+                    "激励不仅限于钱。公司有一套针对核心人才的长期激励方案（如：合伙人机制、专业进修机会、参与重大决策权等），让员工清晰感知到：在这里干活，不仅是赚现在的钱，还能通过组织平台实现个人职场价值的持续溢价。"
+                ]
+            },
+            {
+                "dimension": "数字化转型",
+                "questions": [
+                    "从客户初次触达（渠道）、到合同执行（价值）、再到售后维护，每一个关键节点都有数字系统（如CRM、进销存或简易自建表）实时记录。管理层能够随时调取真实的业务进度和转化数据，而非通过听取下属口头汇报来掌握情况。",
+                    "公司的日常管理动作（如：审批、跨部门协作、知识共享、任务指派）均通过数字化工具（如：钉钉、飞书、企业微信或专业办公系统）沉淀。信息流转不再依赖于\"人找人\"，而是通过系统实现的自动化提醒和进度追踪，极大地降低了沟通的\"摩擦力\"。",
+                    "公司积极引导员工使用前沿技术工具（如：AI写作/绘图辅助、自动化营销机器人、数据分析插件等）来赋能业务。这些工具不仅提高了员工的单位产出（人效），更让原本需要高阶专业人才才能完成的任务，通过工具辅助变成了普通员工也能达到的标准动作。"
+                ]
+            },
+            {
+                "dimension": "竞争壁垒",
+                "questions": [
+                    "公司能够清晰识别出哪些是竞争对手\"花钱也买不走\"的核心资产（如：独特的品牌心智、专利技术、行业标准话语权、或者独有的特许经营权），并有专门的预算和动作去持续强化、保护这些资产，使其随时间推移不断增厚。",
+                    "公司在交付产品或服务的过程中，刻意增加了与客户的\"粘性深度\"。通过服务集成、数据连接、会员情感联结或业务流程的深度嵌入，使得客户如果转向竞争对手，将面临极大的时间成本、经济损失或心理压力。",
+                    "公司不仅关注利润，更关注\"效率壁垒\"。我们通过工艺改进、供应链优化或组织提效，使得公司在维持同等价值产出的前提下，具备比行业平均水平更低的成本结构，或者更快的周转速度，让对手在发动价格战时无从下手。"
+                ]
+            }
+        ];
+
+        // 题目模板
+        const questionsTemplate = {
+            toc: [],
+            tob: []
+        };
+        
+        // 初始化To B题目
+        function initToBQuestions() {
+            const tobData = tobQuestionsData["B端业务自测题"];
+            questionsTemplate.tob = [];
+            
+            console.log('初始化To B题目，共', tobData.length, '个结构');
+            
+            tobData.forEach(dimData => {
+                const dimInfo = dimensionNameMap[dimData.dimension];
+                if (dimInfo) {
+                    console.log(`处理结构: ${dimData.dimension} -> ${dimInfo.name} (索引: ${dimInfo.index}), 题目数: ${dimData.questions.length}`);
+                    dimData.questions.forEach((question, qIndex) => {
+                        questionsTemplate.tob.push({
+                            dimension: dimInfo.name,
+                            dimensionIndex: dimInfo.index,
+                            questionIndex: qIndex,
+                            question: question
+                        });
+                    });
+                } else {
+                    console.warn(`未找到映射的结构: ${dimData.dimension}`);
+                }
+            });
+            
+            console.log('To B题目初始化完成，共', questionsTemplate.tob.length, '道题');
+        }
+        
+        // 初始化To C题目
+        function initToCQuestions() {
+            questionsTemplate.toc = [];
+            
+            console.log('初始化To C题目，共', tocQuestionsData.length, '个结构');
+            
+            // 按结构分组题目，因为有些结构可能有多个来源（如价值结构+数字化转型）
+            const dimensionQuestions = {};
+            dimensions.forEach((dim, index) => {
+                dimensionQuestions[dim] = [];
+            });
+            
+            tocQuestionsData.forEach(dimData => {
+                const dimInfo = dimensionNameMap[dimData.dimension];
+                if (dimInfo) {
+                    console.log(`处理结构: ${dimData.dimension} -> ${dimInfo.name} (索引: ${dimInfo.index}), 题目数: ${dimData.questions.length}`);
+                    // 将题目添加到对应结构
+                    dimData.questions.forEach((question, qIndex) => {
+                        dimensionQuestions[dimInfo.name].push({
+                            dimension: dimInfo.name,
+                            dimensionIndex: dimInfo.index,
+                            questionIndex: qIndex,
+                            question: question
+                        });
+                    });
+                } else {
+                    console.warn(`未找到映射的结构: ${dimData.dimension}`);
+                }
+            });
+            
+            // 按结构顺序整理题目，每个结构最多3道题
+            dimensions.forEach((dim, dimIndex) => {
+                const questions = dimensionQuestions[dim] || [];
+                console.log(`结构 ${dim} (索引${dimIndex}): ${questions.length} 道题`);
+                // 如果某个结构题目不足3道，保持原样（如管理结构只有2道题）
+                questions.forEach((q, qIndex) => {
+                    questionsTemplate.toc.push({
+                        ...q,
+                        questionIndex: qIndex
+                    });
+                });
+            });
+            
+            console.log('To C题目初始化完成，共', questionsTemplate.toc.length, '道题');
+        }
+        
+        // 初始化To B和To C题目
+        initToBQuestions();
+        initToCQuestions();
+
+        // To C和To B题目都已内置，不需要从JSON加载
+        // 注意：本地文件（file://协议）无法使用fetch，所以直接使用内置数据
+        function loadQuestionsFromJSON() {
+            // 题目数据已内置在代码中，不需要从外部文件加载
+            console.log('To C和To B题目已使用内置数据');
+            return true;
+        }
+
+        // 页面加载时初始化（仅用于日志记录）
+        loadQuestionsFromJSON();
+
+        // 应用状态
+        let currentBusinessType = null;
+        let currentQuestions = [];
+        let currentDimensionIndex = 0; // 当前结构索引（0-7，共8个结构）
+        let answers = [];
+        let radarChart = null;
+        
+        // 按结构组织题目
+        function organizeQuestionsByDimension(questions) {
+            const organized = {};
+            dimensions.forEach((dim, index) => {
+                organized[index] = questions.filter(q => q.dimensionIndex === index);
+            });
+            return organized;
+        }
+
+        // 等待DOM加载完成后初始化
+        function initApp() {
+            console.log('初始化应用...');
+            
+            // DOM 元素
+            const screens = document.querySelectorAll('.screen');
+            const selectionScreen = document.getElementById('selectionScreen');
+            const quizScreen = document.getElementById('quizScreen');
+            const resultScreen = document.getElementById('resultScreen');
+            const contactScreen = document.getElementById('contactScreen');
+            const startBtn = document.getElementById('startBtn');
+            const businessTypeCards = document.querySelectorAll('.business-type-card');
+            const questionContainer = document.getElementById('questionContainer');
+            const progressFill = document.getElementById('progressFill');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const getReportBtn = document.getElementById('getReportBtn');
+            const contactForm = document.getElementById('contactForm');
+
+            console.log('DOM元素检查:', {
+                startBtn: !!startBtn,
+                businessTypeCards: businessTypeCards.length,
+                questionContainer: !!questionContainer
+            });
+
+            // 检查关键元素是否存在
+            if (!startBtn) {
+                console.error('startBtn元素未找到');
+                return;
+            }
+            
+            if (!businessTypeCards || businessTypeCards.length === 0) {
+                console.error('businessTypeCards元素未找到');
+                return;
+            }
+
+            console.log('找到', businessTypeCards.length, '个业务类型卡片');
+
+            // 选择业务类型
+            businessTypeCards.forEach((card, index) => {
+                console.log(`绑定卡片${index}的点击事件，类型:`, card.dataset.type);
+                
+                // 确保卡片可点击
+                card.style.cursor = 'pointer';
+                card.style.pointerEvents = 'auto';
+                
+                card.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('卡片被点击，类型:', card.dataset.type);
+                    
+                    businessTypeCards.forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    currentBusinessType = card.dataset.type;
+                    // 设置全局变量，用于保存数据时使用
+                    window.selectedBusinessType = card.dataset.type === 'toc' ? 'C端业务' : 'B端业务';
+                    startBtn.disabled = false;
+                    
+                    console.log('当前选择的业务类型:', currentBusinessType);
+                    console.log('设置的业务类型名称:', window.selectedBusinessType);
+                });
+            });
+
+            // 开始测试
+            startBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('开始测试按钮被点击，当前业务类型:', currentBusinessType);
+                
+                if (!currentBusinessType) {
+                    alert('请先选择业务类型');
+                    return;
+                }
+                currentQuestions = questionsTemplate[currentBusinessType];
+                if (!currentQuestions || currentQuestions.length === 0) {
+                    alert('题目数据未加载，请刷新页面重试');
+                    console.error('题目数据为空:', currentBusinessType, questionsTemplate);
+                    return;
+                }
+                console.log('开始测试，题目数量:', currentQuestions.length);
+                answers = new Array(currentQuestions.length).fill(null);
+                currentDimensionIndex = 0;
+                window.organizedQuestions = organizeQuestionsByDimension(currentQuestions);
+                showQuestion();
+                showScreen('quizScreen');
+            });
+            
+            console.log('事件监听器绑定完成');
+
+            // 上一个结构
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    if (currentDimensionIndex > 0) {
+                        currentDimensionIndex--;
+                        showQuestion();
+                    }
+                });
+            }
+
+            // 下一个结构/查看结果
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    // 确保当前结构的所有题目都有答案（如果没有，设为默认值5）
+                    const dimensionQuestions = window.organizedQuestions[currentDimensionIndex] || [];
+                    dimensionQuestions.forEach(question => {
+                        const globalIndex = currentQuestions.indexOf(question);
+                        if (answers[globalIndex] === null) {
+                            answers[globalIndex] = 5; // 默认值
+                        }
+                    });
+
+                    if (currentDimensionIndex < dimensions.length - 1) {
+                        currentDimensionIndex++;
+                        showQuestion();
+                    } else {
+                        calculateResults();
+                    }
+                });
+            }
+
+            // 获取报告
+            if (getReportBtn) {
+                getReportBtn.addEventListener('click', () => {
+                    showScreen('contactScreen');
+                });
+            }
+
+            // 提交留资表单
+            if (contactForm) {
+                contactForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const userName = document.getElementById('userName').value;
+                    const companyName = document.getElementById('companyName').value;
+                    const userPhone = document.getElementById('userPhone').value;
+
+                    // 准备用户数据
+                    const userData = {
+                        user_name: userName,
+                        company_name: companyName,
+                        user_phone: userPhone,
+                        business_type: window.selectedBusinessType || '未知',
+                        submit_time: new Date().toLocaleString('zh-CN'),
+                        results: window.testResults || {}
+                    };
+
+                    // 提交数据到 Supabase 或 localStorage（备用）
+                    async function submitData() {
+                        if (supabaseClient) {
+                            // 使用 Supabase 提交数据
+                            try {
+                                const { data, error } = await supabaseClient
+                                    .from('assessments')
+                                    .insert([userData])
+                                    .select();
+                                
+                                if (error) {
+                                    throw error;
+                                }
+                                
+                                console.log('数据已成功提交到 Supabase:', data);
+                                // 显示成功界面
+                                showScreen('successScreen');
+                            } catch (error) {
+                                console.error('提交数据到 Supabase 失败:', error);
+                                // 如果 Supabase 失败，尝试使用 localStorage 作为备用
+                                fallbackToLocalStorage(userData);
+                            }
+                        } else {
+                            // 如果没有配置 Supabase，使用 localStorage
+                            fallbackToLocalStorage(userData);
+                        }
+                    }
+                    
+                    // localStorage 备用方案
+                    function fallbackToLocalStorage(data) {
+                        try {
+                            // 添加 id 字段用于兼容
+                            const localData = {
+                                id: Date.now(),
+                                userName: data.user_name,
+                                companyName: data.company_name,
+                                userPhone: data.user_phone,
+                                businessType: data.business_type,
+                                submitTime: data.submit_time,
+                                results: data.results
+                            };
+                            
+                            let allUserData = [];
+                            const storedData = localStorage.getItem('assessmentUserData');
+                            if (storedData) {
+                                allUserData = JSON.parse(storedData);
+                            }
+                            allUserData.push(localData);
+                            localStorage.setItem('assessmentUserData', JSON.stringify(allUserData));
+                            
+                            console.log('数据已保存到 localStorage（备用方案）');
+                            showScreen('successScreen');
+                        } catch (e) {
+                            console.error('保存数据失败:', e);
+                            alert('数据保存失败：' + e.message + '\n请检查浏览器设置或网络连接。');
+                            // 即使保存失败，也显示成功页面（用户体验优先）
+                            showScreen('successScreen');
+                        }
+                    }
+                    
+                    // 执行提交
+                    submitData();
+                });
+            }
+
+            // 保存DOM元素引用到全局，供其他函数使用
+            window.questionContainer = questionContainer;
+            window.progressFill = progressFill;
+            window.prevBtn = prevBtn;
+            window.nextBtn = nextBtn;
+        }
+
+        // DOM加载完成后初始化
+        function startApp() {
+            console.log('开始初始化应用，DOM状态:', document.readyState);
+            if (document.readyState === 'loading') {
+                console.log('等待DOM加载...');
+                document.addEventListener('DOMContentLoaded', function() {
+                    console.log('DOM加载完成，执行initApp');
+                    initApp();
+                });
+            } else {
+                console.log('DOM已就绪，立即执行initApp');
+                // DOM已经加载完成，延迟一点确保所有元素都已渲染
+                setTimeout(function() {
+                    initApp();
+                }, 100);
+            }
+        }
+        
+        // 启动应用
+        startApp();
+
+        // 显示指定屏幕
+        function showScreen(screenId) {
+            const allScreens = document.querySelectorAll('.screen');
+            allScreens.forEach(s => {
+                s.classList.remove('active');
+                s.style.display = 'none';
+            });
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) {
+                targetScreen.classList.add('active');
+                targetScreen.style.display = 'block';
+            }
+        }
+
+        // 显示题目（显示当前结构下的所有3道题）
+        function showQuestion() {
+            const dimensionQuestions = window.organizedQuestions[currentDimensionIndex] || [];
+            const currentDimension = dimensions[currentDimensionIndex];
+            const totalDimensions = dimensions.length;
+            const progress = ((currentDimensionIndex + 1) / totalDimensions) * 100;
+            
+            if (window.progressFill) {
+                window.progressFill.style.width = progress + '%';
+            }
+            
+            if (window.questionContainer) {
+                let questionsHTML = `
+                    <div class="question-number">第 ${currentDimensionIndex + 1} 个结构 / 共 ${totalDimensions} 个结构</div>
+                    <div class="dimension-label">${currentDimension}结构</div>
+                `;
+                
+                dimensionQuestions.forEach((question, qIndex) => {
+                    const globalIndex = currentQuestions.indexOf(question);
+                    const currentAnswer = answers[globalIndex] || 5;
+                    
+                    questionsHTML += `
+                        <div class="question-item" style="margin-bottom: 40px;">
+                            <div class="question-text" style="margin-bottom: 20px;">${qIndex + 1}. ${question.question}</div>
+                            <div class="slider-container">
+                                <div class="slider-value" id="sliderValue${qIndex}">${currentAnswer}</div>
+                                <div class="slider-wrapper">
+                                    <input type="range" min="1" max="10" value="${currentAnswer}" class="slider" id="answerSlider${qIndex}" data-global-index="${globalIndex}">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>1分<br>完全不符合</span>
+                                    <span>5分<br>一般</span>
+                                    <span>10分<br>完全符合</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                window.questionContainer.innerHTML = questionsHTML;
+
+                // 为每个滑动条绑定事件
+                dimensionQuestions.forEach((question, qIndex) => {
+                    const globalIndex = currentQuestions.indexOf(question);
+                    const slider = document.getElementById(`answerSlider${qIndex}`);
+                    const sliderValue = document.getElementById(`sliderValue${qIndex}`);
+                    
+                    if (slider && sliderValue) {
+                        slider.addEventListener('input', (e) => {
+                            const value = parseInt(e.target.value);
+                            sliderValue.textContent = value;
+                            answers[globalIndex] = value;
+                        });
+                    }
+                });
+            }
+
+            updateNavigationButtons();
+        }
+
+        // 更新导航按钮
+        function updateNavigationButtons() {
+            if (window.prevBtn) {
+                window.prevBtn.style.display = currentDimensionIndex > 0 ? 'block' : 'none';
+            }
+            
+            if (window.nextBtn) {
+                if (currentDimensionIndex === dimensions.length - 1) {
+                    window.nextBtn.textContent = '查看结果';
+                } else {
+                    window.nextBtn.textContent = '下一个结构';
+                }
+            }
+        }
+
+        // 计算结果
+        function calculateResults() {
+            // 计算各结构得分
+            const dimensionScores = {};
+            dimensions.forEach((dim, dimIndex) => {
+                const dimQuestions = window.organizedQuestions[dimIndex] || [];
+                // 使用题目在currentQuestions中的实际索引
+                const dimAnswers = dimQuestions.map((q) => {
+                    const globalIndex = currentQuestions.indexOf(q);
+                    return answers[globalIndex] || 5; // 默认值5
+                });
+                if (dimAnswers.length > 0) {
+                    dimensionScores[dim] = dimAnswers.reduce((a, b) => a + b, 0) / dimAnswers.length;
+                } else {
+                    dimensionScores[dim] = 5; // 如果没有题目，默认5分
+                }
+            });
+
+            // 计算业绩均分(P_avg)、组织均分(O_avg)、壁垒均分(B_avg)、数字化均分(D_avg)
+            // 业绩相关：需求、价值、渠道（市场表现相关）
+            // 组织相关：管理、能力、激励（内部组织能力）
+            // 壁垒：壁垒结构
+            // 数字化：从价值结构中提取（通常价值结构包含数字化相关内容）
+            const P_avg = (dimensionScores['需求'] + dimensionScores['价值'] + dimensionScores['渠道']) / 3;
+            const O_avg = (dimensionScores['管理'] + dimensionScores['能力'] + dimensionScores['激励']) / 3;
+            const B_avg = dimensionScores['壁垒'];
+            // 数字化均分：使用数字化转型结构的得分
+            const D_avg = dimensionScores['数字化转型'];
+
+            // 计算CBI指数
+            const CBI = ((P_avg + O_avg) / 2) * (B_avg / 10) * (1 + D_avg / 50);
+
+            // 判断企业类型
+            let enterpriseType = '';
+            let typeDesc = '';
+            if (P_avg >= 6 && O_avg >= 6) {
+                enterpriseType = '领跑型';
+                typeDesc = '您的企业在业绩和组织能力方面都表现优秀，处于行业领先地位。建议继续保持优势，持续创新，扩大市场份额。';
+            } else if (P_avg >= 6 && O_avg < 6) {
+                enterpriseType = '虚火型';
+                typeDesc = '您的企业业绩表现良好，但组织能力有待提升。建议加强内部管理，提升组织效能，避免业绩虚高但后劲不足的情况。';
+            } else if (P_avg < 6 && O_avg >= 6) {
+                enterpriseType = '内耗型';
+                typeDesc = '您的企业组织能力较强，但业绩表现不佳。建议优化业务模式，提升市场竞争力，将组织优势转化为业绩成果。';
+            } else {
+                enterpriseType = '生存型';
+                typeDesc = '您的企业在业绩和组织能力方面都需要加强。建议系统性地分析问题，制定全面的提升策略，逐步改善企业竞争力。';
+            }
+
+            // 保存每道题的原始答案（用于详细诊断）
+            const questionAnswers = {};
+            dimensions.forEach((dim, dimIndex) => {
+                const dimQuestions = window.organizedQuestions[dimIndex] || [];
+                questionAnswers[dim] = dimQuestions.map((q) => {
+                    const globalIndex = currentQuestions.indexOf(q);
+                    return answers[globalIndex] || 5; // 默认值5
+                });
+            });
+
+            // 显示结果
+            showResults({
+                dimensionScores,
+                P_avg,
+                O_avg,
+                B_avg,
+                D_avg,
+                CBI,
+                enterpriseType,
+                typeDesc,
+                questionAnswers // 保存每道题的答案
+            });
+        }
+
+        // 显示结果
+        function showResults(results) {
+            // 显示诊断结果
+            document.getElementById('diagnosisResult').innerHTML = `
+                <div class="diagnosis-type">${results.enterpriseType}</div>
+                <div class="diagnosis-desc">${results.typeDesc}</div>
+            `;
+
+            // 显示CBI分数和诊断
+            document.getElementById('cbiScore').textContent = results.CBI.toFixed(2);
+            displayCBIDiagnosis(results.CBI);
+
+            // 显示四宫格定位描述
+            displayQuadrantDescription(results.P_avg, results.O_avg, results.enterpriseType);
+
+            // 绘制雷达图（异步等待 Chart.js 加载）
+            drawRadarChart(results.dimensionScores).catch(error => {
+                console.error('绘制雷达图失败:', error);
+            });
+
+            // 显示结构得分
+            displayDimensionScores(results.dimensionScores);
+
+            // 保存结果到全局变量
+            window.testResults = results;
+
+            showScreen('resultScreen');
+        }
+
+        // 显示四宫格定位描述
+        function displayQuadrantDescription(P_avg, O_avg, type) {
+            const container = document.getElementById('quadrantDescription');
+            if (!container) return;
+            
+            let description = '';
+            if (type === '领跑型') {
+                description = `
+                    <h4 style="color: #4caf50; margin-bottom: 15px;">📍 您当前处于：<strong>领跑型</strong>象限</h4>
+                    <p style="font-size: 16px; line-height: 1.8; margin-bottom: 15px;">
+                        <strong>业绩能力得分：</strong>${P_avg.toFixed(1)}分<br>
+                        <strong>组织能力得分：</strong>${O_avg.toFixed(1)}分
+                    </p>
+                    <p style="font-size: 15px; line-height: 1.8; color: #666;">
+                        您的企业在业绩和组织能力方面都表现优秀，处于行业领先地位。建议继续保持优势，持续创新，扩大市场份额。
+                    </p>
+                `;
+            } else if (type === '虚火型') {
+                description = `
+                    <h4 style="color: #ff9800; margin-bottom: 15px;">📍 您当前处于：<strong>虚火型</strong>象限</h4>
+                    <p style="font-size: 16px; line-height: 1.8; margin-bottom: 15px;">
+                        <strong>业绩能力得分：</strong>${P_avg.toFixed(1)}分<br>
+                        <strong>组织能力得分：</strong>${O_avg.toFixed(1)}分
+                    </p>
+                    <p style="font-size: 15px; line-height: 1.8; color: #666;">
+                        您的企业业绩表现良好，但组织能力有待提升。建议加强内部管理，提升组织效能，避免业绩虚高但后劲不足的情况。
+                    </p>
+                `;
+            } else if (type === '内耗型') {
+                description = `
+                    <h4 style="color: #2196f3; margin-bottom: 15px;">📍 您当前处于：<strong>内耗型</strong>象限</h4>
+                    <p style="font-size: 16px; line-height: 1.8; margin-bottom: 15px;">
+                        <strong>业绩能力得分：</strong>${P_avg.toFixed(1)}分<br>
+                        <strong>组织能力得分：</strong>${O_avg.toFixed(1)}分
+                    </p>
+                    <p style="font-size: 15px; line-height: 1.8; color: #666;">
+                        您的企业组织能力较强，但业绩表现不佳。建议优化业务模式，提升市场竞争力，将组织优势转化为业绩成果。
+                    </p>
+                `;
+            } else {
+                description = `
+                    <h4 style="color: #f44336; margin-bottom: 15px;">📍 您当前处于：<strong>生存型</strong>象限</h4>
+                    <p style="font-size: 16px; line-height: 1.8; margin-bottom: 15px;">
+                        <strong>业绩能力得分：</strong>${P_avg.toFixed(1)}分<br>
+                        <strong>组织能力得分：</strong>${O_avg.toFixed(1)}分
+                    </p>
+                    <p style="font-size: 15px; line-height: 1.8; color: #666;">
+                        您的企业在业绩和组织能力方面都需要加强。建议系统性地分析问题，制定全面的提升策略，逐步改善企业竞争力。
+                    </p>
+                `;
+            }
+            
+            container.innerHTML = description;
+        }
+        
+        // 显示CBI诊断分析
+        function displayCBIDiagnosis(CBI) {
+            const container = document.getElementById('cbiDiagnosis');
+            if (!container) return;
+            
+            let diagnosis = '';
+            if (CBI >= 8.5 && CBI <= 12.0) {
+                diagnosis = `
+                    <h4 style="color: #4caf50; margin-bottom: 15px;">🏆 垄断级壁垒 (${CBI.toFixed(2)}分)</h4>
+                    <p style="font-size: 15px; line-height: 1.8; color: #333;">
+                        企业已构建起极具韧性的防御性资产，形成了难以逾越的结构性护城河。这种垄断级壁垒不仅源于独特的价值定位，更得益于组织能力与业务逻辑的深度耦合，以及数字化资产的持续沉淀。在该分值区间内，企业展现出卓越的议价能力与抗周期韧性。对手即便投入巨量资本，也难以在短周期内通过简单的资源堆砌实现赶超。建议未来聚焦于极致效率的精进，利用技术杠杆实现从"领跑"向"行业标准制定者"的跨越。
+                    </p>
+                `;
+            } else if (CBI >= 6.0 && CBI < 8.5) {
+                diagnosis = `
+                    <h4 style="color: #ff9800; margin-bottom: 15px;">🛡️ 安全级壁垒 (${CBI.toFixed(2)}分)</h4>
+                    <p style="font-size: 15px; line-height: 1.8; color: #333;">
+                        企业具备明确的战略锚点，在细分领域内确立了稳健的竞争身位，并展现出较强的运营执行力。然而，这种安全边际尚未转化为绝对的结构性优势，现有的壁垒仍具一定的渗透可能性。随着市场边界的模糊与竞争强度的提升，组织内部潜在的短板（如决策链条冗余或激励机制滞后）可能成为被对手穿透的破口。此类企业应在稳固存量资产的同时，加速补齐结构性残缺，以防在激烈的市场变局中丧失先手权。
+                    </p>
+                `;
+            } else {
+                diagnosis = `
+                    <h4 style="color: #f44336; margin-bottom: 15px;">⚠️ 脆弱级增长 (${CBI.toFixed(2)}分)</h4>
+                    <p style="font-size: 15px; line-height: 1.8; color: #333;">
+                        高增长的表象下往往潜伏着严重的结构性侵蚀风险。企业的利润获取高度依赖外部环境变量或单点业务机会，缺乏可沉淀的战略资产与系统化的组织支撑。在该分值区间，低转化效率意味着经营能量正在高熵状态下快速损耗，企业在同质化博弈中极易陷入"增产不增收"的困局。这种增长是不可持续的，当前需立即启动底层增长引擎的诊断与重构，完成由"机会驱动"向"结构驱动"的战略转型。
+                    </p>
+                `;
+            }
+            
+            container.innerHTML = diagnosis;
+        }
+
+        // 绘制雷达图
+        async function drawRadarChart(dimensionScores) {
+            // 确保 Chart.js 已加载
+            if (typeof Chart === 'undefined') {
+                console.log('等待 Chart.js 加载...');
+                try {
+                    await loadChartJS();
+                } catch (error) {
+                    console.error('Chart.js 加载失败:', error);
+                    const chartContainer = document.getElementById('radarChart');
+                    if (chartContainer && chartContainer.parentElement) {
+                        chartContainer.parentElement.innerHTML = 
+                            '<div style="padding: 40px; text-align: center; background: #fff; border-radius: 8px;">' +
+                            '<p style="color: #f44336; font-size: 16px; margin-bottom: 10px; font-weight: 500;">图表库加载失败</p>' +
+                            '<p style="color: #666; margin-bottom: 20px; font-size: 14px;">请检查网络连接后刷新页面</p>' +
+                            '<button onclick="location.reload()" style="padding: 12px 24px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; transition: background 0.3s;">刷新页面</button>' +
+                            '</div>';
+                    }
+                    throw error;
+                }
+            }
+            
+            const chartElement = document.getElementById('radarChart');
+            if (!chartElement) {
+                console.error('找不到雷达图容器元素');
+                return;
+            }
+            
+            const ctx = chartElement.getContext('2d');
+            
+            if (radarChart) {
+                radarChart.destroy();
+            }
+
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: dimensions,
+                    datasets: [{
+                        label: '结构得分',
+                        data: dimensions.map(dim => dimensionScores[dim]),
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(102, 126, 234, 1)'
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 10,
+                            ticks: {
+                                stepSize: 2
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // 显示结构得分
+        function displayDimensionScores(dimensionScores) {
+            const container = document.getElementById('dimensionScores');
+            container.innerHTML = dimensions.map(dim => `
+                <div class="dimension-score-item">
+                    <div class="name">${dim}结构</div>
+                    <div class="score">${dimensionScores[dim].toFixed(1)}分</div>
+                </div>
+            `).join('');
+        }
+
+
+        // 生成PDF报告
+        function generatePDFReport(data) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // 设置字体大小
+            doc.setFontSize(20);
+            // 使用英文标题避免中文显示问题，或使用支持中文的字体
+            doc.text('Enterprise Competitiveness Assessment Report', 105, 20, { align: 'center' });
+
+            doc.setFontSize(12);
+            doc.text(`Name: ${data.userName}`, 20, 40);
+            doc.text(`Company: ${data.companyName}`, 20, 50);
+            doc.text(`Phone: ${data.userPhone}`, 20, 60);
+
+            doc.setFontSize(16);
+            doc.text('Assessment Results', 20, 80);
+
+            doc.setFontSize(12);
+            doc.text(`Enterprise Type: ${data.results.enterpriseType}`, 20, 95);
+            doc.text(`CBI Index: ${data.results.CBI.toFixed(2)}`, 20, 105);
+            doc.text(`Performance Avg: ${data.results.P_avg.toFixed(2)}`, 20, 115);
+            doc.text(`Organization Avg: ${data.results.O_avg.toFixed(2)}`, 20, 125);
+            doc.text(`Barrier Avg: ${data.results.B_avg.toFixed(2)}`, 20, 135);
+            doc.text(`Digitalization Avg: ${data.results.D_avg.toFixed(2)}`, 20, 145);
+
+            doc.setFontSize(14);
+            doc.text('Dimension Scores', 20, 160);
+            
+            let yPos = 170;
+            dimensions.forEach(dim => {
+                doc.setFontSize(12);
+                doc.text(`${dim}: ${data.results.dimensionScores[dim].toFixed(1)}`, 20, yPos);
+                yPos += 10;
+            });
+
+            doc.setFontSize(12);
+            // 将中文描述转换为英文或使用支持中文的库
+            const descEn = data.results.typeDesc.length > 100 
+                ? data.results.typeDesc.substring(0, 100) + '...'
+                : data.results.typeDesc;
+            doc.text(descEn, 20, yPos + 10, { maxWidth: 170 });
+
+            // 保存PDF
+            const fileName = `Competitiveness_Report_${data.userName}_${new Date().getTime()}.pdf`;
+            doc.save(fileName);
+            
+            alert('PDF报告已生成并下载！\nPDF report has been generated and downloaded!');
+        }
+
+        // 尝试从CSV文件加载题目（需要服务器环境）
+        async function loadQuestionsFromCSV() {
+            try {
+                // 这里需要根据实际的CSV文件结构来解析
+                // 由于浏览器安全限制，可能需要后端支持或手动输入
+                console.log('需要从CSV文件加载题目');
+            } catch (error) {
+                console.error('加载题目失败:', error);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测评数据管理后台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 32px;
+        }
+
+        /* 登录界面 */
+        #loginScreen {
+            max-width: 400px;
+            margin: 100px auto;
+        }
+
+        .login-form {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="password"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            margin-top: 10px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* 管理界面 */
+        #adminScreen {
+            display: none;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            flex: 1;
+            min-width: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar .btn {
+            width: auto;
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btns .btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            width: auto;
+        }
+
+        /* 详情模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 900px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #333;
+        }
+
+        .close-btn {
+            background: #e0e0e0;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            background: #ccc;
+        }
+
+        .detail-section {
+            margin-bottom: 25px;
+        }
+
+        .detail-section h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .detail-row {
+            display: flex;
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .detail-label {
+            width: 150px;
+            font-weight: 500;
+            color: #666;
+        }
+
+        .detail-value {
+            flex: 1;
+            color: #333;
+        }
+
+        .score-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .score-high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .score-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .score-low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* 配置模态框 */
+        .config-section {
+            margin-bottom: 20px;
+        }
+
+        .config-section label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .config-section input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .config-section .help-text {
+            color: #999;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 登录界面 -->
+        <div id="loginScreen">
+            <div class="login-form">
+                <h1 style="margin-bottom: 30px;">管理员登录</h1>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="passwordInput" placeholder="请输入管理员密码" autocomplete="off">
+                </div>
+                <button class="btn" onclick="handleLogin()">登录</button>
+                <div id="loginError" class="error-message"></div>
+            </div>
+        </div>
+
+        <!-- 管理界面 -->
+        <div id="adminScreen">
+            <h1>测评数据管理后台</h1>
+            
+            <!-- 统计信息 -->
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <h3>总数据量</h3>
+                    <div class="number" id="totalCount">0</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <h3>B端业务</h3>
+                    <div class="number" id="bCount">0</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+                    <h3>C端业务</h3>
+                    <div class="number" id="cCount">0</div>
+                </div>
+            </div>
+
+            <!-- 工具栏 -->
+            <div class="toolbar">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="搜索姓名、公司、电话..." oninput="filterData()">
+                </div>
+                <button class="btn btn-secondary" onclick="exportToJSON()">导出JSON</button>
+                <button class="btn btn-secondary" onclick="exportToCSV()">导出CSV</button>
+                <button class="btn btn-success" onclick="showFeishuConfig()">导出到飞书</button>
+                <button class="btn btn-danger" onclick="clearAllData()">清空所有数据</button>
+                <button class="btn" onclick="logout()">退出登录</button>
+            </div>
+
+            <!-- 数据表格 -->
+            <div style="overflow-x: auto;">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>序号</th>
+                            <th>提交时间</th>
+                            <th>姓名</th>
+                            <th>公司名称</th>
+                            <th>联系电话</th>
+                            <th>业务类型</th>
+                            <th>CBI指数</th>
+                            <th>企业类型</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-state-icon">📭</div>
+                <h3>暂无数据</h3>
+                <p>还没有受测者提交数据</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详情模态框 -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>数据详情</h2>
+                <button class="close-btn" onclick="closeDetailModal()">×</button>
+            </div>
+            <div id="detailContent"></div>
+        </div>
+    </div>
+
+    <!-- 飞书配置模态框 -->
+    <div id="feishuModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>飞书多维表格配置</h2>
+                <button class="close-btn" onclick="closeFeishuModal()">×</button>
+            </div>
+            <div class="config-section">
+                <label>App ID</label>
+                <input type="text" id="feishuAppId" placeholder="请输入飞书应用的App ID">
+                <div class="help-text">在飞书开放平台创建应用后获取</div>
+            </div>
+            <div class="config-section">
+                <label>App Secret</label>
+                <input type="password" id="feishuAppSecret" placeholder="请输入飞书应用的App Secret">
+                <div class="help-text">在飞书开放平台创建应用后获取</div>
+            </div>
+            <div class="config-section">
+                <label>App Token</label>
+                <input type="text" id="feishuAppToken" placeholder="请输入多维表格的App Token">
+                <div class="help-text">在多维表格URL中可以找到，例如：base/AppToken123</div>
+            </div>
+            <div class="config-section">
+                <label>Table ID</label>
+                <input type="text" id="feishuTableId" placeholder="请输入数据表的Table ID">
+                <div class="help-text">在多维表格URL中可以找到，例如：table=TableId456</div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-success" onclick="exportToFeishu()" style="flex: 1;">开始导出</button>
+                <button class="btn" onclick="closeFeishuModal()" style="flex: 0 0 auto; width: auto;">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase 客户端库 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase 配置文件（需要用户自己创建并填入密钥） -->
+    <script src="config.js"></script>
+
+    <script>
+        // 默认密码（可以修改）
+        const ADMIN_PASSWORD = 'admin123';
+        let allData = [];
+        let filteredData = [];
+        
+        // Supabase 客户端初始化（使用 secret key 用于管理后台）
+        let supabaseAdmin = null;
+        if (typeof window.SUPABASE_CONFIG !== 'undefined' && window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.secretKey) {
+            try {
+                supabaseAdmin = supabase.createClient(
+                    window.SUPABASE_CONFIG.url,
+                    window.SUPABASE_CONFIG.secretKey
+                );
+                console.log('Supabase 管理客户端初始化成功');
+            } catch (error) {
+                console.error('Supabase 管理客户端初始化失败:', error);
+            }
+        } else {
+            console.warn('Supabase 配置未找到，将使用 localStorage 作为备用方案');
+        }
+
+        // 维度映射
+        const dimensionNameMap = {
+            '需求结构': { name: '需求', index: 0 },
+            '价值结构': { name: '价值', index: 1 },
+            '渠道结构': { name: '渠道', index: 2 },
+            '壁垒结构': { name: '壁垒', index: 3 },
+            '管理结构': { name: '管理', index: 4 },
+            '能力结构': { name: '能力', index: 5 },
+            '激励结构': { name: '激励', index: 6 },
+            '竞争壁垒': { name: '壁垒', index: 3 },
+            '数字化转型': { name: '数字化转型', index: 7 }
+        };
+
+        // B端业务题目数据
+        const tobQuestionsData = {
+            "B端业务自测题": [
+                {
+                    "dimension": "需求结构",
+                    "questions": [
+                        "针对核心大客户，业务团队会书面绘制详尽的\"组织影响图谱\"，不仅包含采购人信息，更清晰标注了决策者（拍板人）、影响者（技术或财务）、使用者（一线人员）各自的利益诉求、担忧点及性格偏好，并以此制定对应的公关和交付策略。",
+                        "业务团队不仅关注产品销售，还投入专门精力研究大客户所处的行业趋势及竞争对手动态。我们能主动向客户提供具有行业洞察力的增值信息或风险预警，使其感受到我们是在帮他们\"解决业务增长问题\"，而不仅是\"提供一个工具\"。",
+                        "团队在接触客户时，不仅关注产品功能，还会通过标准的访谈或调研工具，主动挖掘该客户不同层级的真实诉求（例如：采购关注\"合规与比价\"、技术关注\"参数与稳定性\"、老板关注\"对战略的支撑\"），并形成清晰的\"客户价值需求清单\"。"
+                    ]
+                },
+                {
+                    "dimension": "价值结构",
+                    "questions": [
+                        "团队在向客户提案或交付时，能够拿出一套逻辑严密的\"收益计算模型\"，清晰展示我们的产品如何帮客户省了多少钱、提了多少效或避了多少坑，而不是仅靠感性的\"质量好、信誉好\"来打动客户。",
+                        "公司针对发现的差异化价值诉求，具备灵活的解决方案库。我们能够像\"搭积木\"一样，根据客户具体的痛点（如：是追求成本极致节约，还是追求技术领先，或是追求售后无忧），从产品和服务中快速组合出最契合对方的差异化方案，而非推销单一的标准化方案。",
+                        "在面对竞争时，团队能够针对该客户最核心的\"痛点点位\"，拿出专门的论证方案或实测数据，向客户证明：\"在您最关心的这1-2个问题上，我们是如何做到比同行更有针对性、效果更好的\"。这种\"点对点\"的价值证明已成为我们的竞标标准动作。"
+                    ]
+                },
+                {
+                    "dimension": "渠道结构",
+                    "questions": [
+                        "团队不仅是在找\"意向公司\"，更是在寻找触达\"关键决策人（DMU）\"的有效路径。我们会通过行业专家背书、上下游合作伙伴引荐、或高质量的线下闭门交流会等方式，建立与决策层的高频连接，而非单纯依赖枯燥的电话推销或陌生拜访。",
+                        "公司定期（如每月/每季）在客户关注的专业媒体、行业协会或技术论坛上发布案例、深度文章或演讲，将公司包装成该细分领域的\"专家\"或\"标准制定者\"，从而让精准的潜在客户在产生需求时，能主动通过专业渠道找到我们。",
+                        "公司建立了一套标准的\"老带新\"或\"战略伙伴\"奖励机制，业务团队会定期对满意度高的老客户进行深度经营，将其转化为我们的\"外部推荐官\"，通过他们的圈子渗透到同类型的精准新客户中，使\"关系链\"成为最低成本且最精准的获客渠道。"
+                    ]
+                },
+                {
+                    "dimension": "管理结构",
+                    "questions": [
+                        "针对日常业务中的突发状况（如客户投诉、紧急调货、方案微调），公司已形成清晰的\"授权手册\"，一线主管或业务员无需层层请示即可在规定权限内自主决策，确保响应速度能够跑赢竞争对手。",
+                        "内部信息流转透明，不同部门（如销售与交付、市场与财务）之间不再依赖漫长的\"公文/邮件流转\"或老板协调，而是围绕具体的\"客户项目\"建立临时小组，通过高频、非正式的沟通快速解决问题。",
+                        "公司管理层会定期（如每半年）带领核心员工共同审视现有的管理规定和业务流程，主动砍掉那些\"为了管理而管理\"、对客户价值和工作效率没有贡献的冗余环节，保持组织的\"轻量化\"运作。"
+                    ]
+                },
+                {
+                    "dimension": "能力结构",
+                    "questions": [
+                        "公司能够清晰界定哪些是底层核心能力（如：特殊的生产工艺、大客户经营方法论等），并投入重金自建团队。同时，这些能力已被提炼为可复制的内部教材或SOP（标准作业程序），不因某个核心员工离职而导致能力丧失。",
+                        "团队具备极强的\"不为我所有，但为我所用\"的开放意识。对于非核心环节（如：品牌设计、基础研发支持、地推团队等），能够娴熟地通过外包、战略合作、咨询顾问等方式借用外部高水平资源，以极低成本实现组织功能的扩充。",
+                        "公司具备系统的\"十字型\"人才培养计划。员工不仅在本职岗位专业，还被鼓励通过内部轮岗或交叉培训，掌握相邻岗位的基本逻辑，从而在业务高峰期实现团队内部的灵活调度。"
+                    ]
+                },
+                {
+                    "dimension": "激励结构",
+                    "questions": [
+                        "奖金发放不只看单一的业绩指标，而是与\"公司战略目标高度挂钩。例如：成功开发出符合\"需求结构\"的战略级新客户，或交付了具有\"差异化价值\"的项目，会有额外的奖励权重。",
+                        "公司敢于拉开激励差距，建立\"能者极多得\"的分配机制。在同一职级内，前20%的顶尖人才与平均水平的报酬差距足够大，确保公司资源集中奖励那些真正为\"竞争壁垒\"做出贡献的核心骨干，而非平均用力。",
+                        "激励不仅限于钱。公司有一套针对核心人才的长期激励方案（如：合伙人机制、专业进修机会、参与重大决策权等），让员工清晰感知到：在这里干活，不仅是赚现在的钱，还能通过组织平台实现个人职场价值的持续溢价。"
+                    ]
+                },
+                {
+                    "dimension": "数字化转型",
+                    "questions": [
+                        "从客户初次触达（渠道）、到合同执行（价值）、再到售后维护，每一个关键节点都有数字系统（如CRM、进销存或简易自建表）实时记录。管理层能够随时调取真实的业务进度和转化数据，而非通过听取下属口头汇报来掌握情况。",
+                        "公司的日常管理动作（如：审批、跨部门协作、知识共享、任务指派）均通过数字化工具（如：钉钉、飞书、企业微信或专业办公系统）沉淀。信息流转不再依赖于\"人找人\"，而是通过系统实现的自动化提醒和进度追踪，极大地降低了沟通的\"摩擦力\"。",
+                        "公司积极引导员工使用前沿技术工具（如：AI写作/绘图辅助、自动化营销机器人、数据分析插件等）来赋能业务。这些工具不仅提高了员工的单位产出（人效），更让原本需要高阶专业人才才能完成的任务，通过工具辅助变成了普通员工也能达到的标准动作。"
+                    ]
+                },
+                {
+                    "dimension": "竞争壁垒",
+                    "questions": [
+                        "公司能够清晰识别出哪些是竞争对手\"花钱也买不走\"的核心资产（如：独特的品牌心智、专利技术、行业标准话语权、或者独有的特许经营权），并有专门的预算和动作去持续强化、保护这些资产，使其随时间推移不断增厚。",
+                        "公司在交付产品或服务的过程中，刻意增加了与客户的\"粘性深度\"。通过服务集成、数据连接、会员情感联结或业务流程的深度嵌入，使得客户如果转向竞争对手，将面临极大的时间成本、经济损失或心理压力。",
+                        "公司不仅关注利润，更关注\"效率壁垒\"。我们通过工艺改进、供应链优化或组织提效，使得公司在维持同等价值产出的前提下，具备比行业平均水平更低的成本结构，或者更快的周转速度，让对手在发动价格战时无从下手。"
+                    ]
+                }
+            ]
+        };
+
+        // C端业务题目数据
+        const tocQuestionsData = [
+            {
+                "dimension": "需求结构",
+                "questions": [
+                    "公司建立并运行着一套动态的客户数据库，能够基于客户的消费行为、生活场景、潜在痛点等多维度标签进行精细化分类（例如：不再只是\"30岁女性\"，而是\"注重健康、对添加剂敏感、有晨跑习惯的职场宝妈\"），且市场动作会根据不同标签人群进行差异化定制。",
+                    "管理层和核心业务团队保持着定期走进一线（如店面、社群或直播间）的习惯，直接与消费者进行深度交流或观察其购买行为，并将收集到的第一手反馈转化为具体的\"产品优化清单\"或\"服务改进建议\"，而非仅看纸面销售报表。",
+                    "在任何重大的产品升级或营销活动大规模投入前，公司已形成一套标准流程，先邀请核心老客户或种子用户进行小范围\"压力测试\"或\"内测访谈\"，基于真实的使用反馈来修正方案，确保上线即符合市场真实预期。"
+                ]
+            },
+            {
+                "dimension": "价值结构",
+                "questions": [
+                    "公司已提炼出能够让客户一听就懂、并与其他对手拉开显著差距的\"核心价值点\"（例如：不是卖衣服，而是卖\"不皱的衬衫\"）。所有的门头、主图、详情页及店员口径，都高度聚焦在这个点上，绝不堆砌冗余卖点。",
+                    "公司针对选定的\"核心价值\"，设计了具体的、可感知的服务环节。例如：承诺\"不满意包退\"不只是口号，而是有一套标准的\"秒退\"流程，确保客户在最关键的价值点上获得远超行业水平的实际体验。",
+                    "公司定期（如每半年）深度拆解本地或同赛道前三名对手的优劣势，并刻意在产品或服务上做出\"反向设计\"（例如：对手做大而全，我们做小而美；对手做低价走量，我们做高质陪跑），以确保我们在客户眼中具有唯一的替代性。"
+                ]
+            },
+            {
+                "dimension": "渠道结构",
+                "questions": [
+                    "公司不盲目跟风投流，而是根据\"需求结构\"中定义的客户画像，通过数据分析或小量测试，明确锁定了客户高频出现的3-5个核心渠道（如：特定的小红书话题、线下社区、或垂直社群），并针对不同渠道的属性制定了差异化的内容表达。",
+                    "公司建立了一套清晰的渠道账本，定期会核算每一个获客来源的真实成本和转化率。对于转化效率低、客群不精准的渠道，团队能够迅速复盘并做出停损或优化决策，而非凭感觉持续投入。",
+                    "任何渠道带来的新客户，公司都有一套标准化的流程（如：扫码领券、添加专属顾问、关注公众号等）将其沉淀到公司自有的私域阵地中，并配套了持续的运营动作，确保获客不只是\"一锤子买卖\"，而是能产生后续的复购或推荐。"
+                ]
+            },
+            {
+                "dimension": "管理结构",
+                "questions": [
+                    "针对日常业务中的突发状况（如客户投诉、紧急调货、方案微调），公司已形成清晰的\"授权手册\"，一线主管或业务员无需层层请示即可在规定权限内自主决策，确保响应速度能够跑赢竞争对手。",
+                    "内部信息流转透明，不同部门（如销售与交付、市场与财务）之间不再依赖漫长的\"公文/邮件流转\"或老板协调，而是围绕具体的\"客户项目\"建立临时小组，通过高频、非正式的沟通快速解决问题。",
+                    "公司管理层会定期（如每半年）带领核心员工共同审视现有的管理规定和业务流程，主动砍掉那些\"为了管理而管理\"、对客户价值和工作效率没有贡献的冗余环节，保持组织的\"轻量化\"运作。"
+                ]
+            },
+            {
+                "dimension": "能力结构",
+                "questions": [
+                    "公司能够清晰界定哪些是底层核心能力（如：特殊的生产工艺、大客户经营方法论等），并投入重金自建团队。同时，这些能力已被提炼为可复制的内部教材或SOP（标准作业程序），不因某个核心员工离职而导致能力丧失。",
+                    "团队具备极强的\"不为我所有，但为我所用\"的开放意识。对于非核心环节（如：品牌设计、基础研发支持、地推团队等），能够娴熟地通过外包、战略合作、咨询顾问等方式借用外部高水平资源，以极低成本实现组织功能的扩充。",
+                    "公司具备系统的\"十字型\"人才培养计划。员工不仅在本职岗位专业，还被鼓励通过内部轮岗或交叉培训，掌握相邻岗位的基本逻辑，从而在业务高峰期实现团队内部的灵活调度。"
+                ]
+            },
+            {
+                "dimension": "激励结构",
+                "questions": [
+                    "奖金发放不只看单一的业绩指标，而是与\"公司战略目标高度挂钩。例如：成功开发出符合\"需求结构\"的战略级新客户，或交付了具有\"差异化价值\"的项目，会有额外的奖励权重。",
+                    "公司敢于拉开激励差距，建立\"能者极多得\"的分配机制。在同一职级内，前20%的顶尖人才与平均水平的报酬差距足够大，确保公司资源集中奖励那些真正为\"竞争壁垒\"做出贡献的核心骨干，而非平均用力。",
+                    "激励不仅限于钱。公司有一套针对核心人才的长期激励方案（如：合伙人机制、专业进修机会、参与重大决策权等），让员工清晰感知到：在这里干活，不仅是赚现在的钱，还能通过组织平台实现个人职场价值的持续溢价。"
+                ]
+            },
+            {
+                "dimension": "数字化转型",
+                "questions": [
+                    "从客户初次触达（渠道）、到合同执行（价值）、再到售后维护，每一个关键节点都有数字系统（如CRM、进销存或简易自建表）实时记录。管理层能够随时调取真实的业务进度和转化数据，而非通过听取下属口头汇报来掌握情况。",
+                    "公司的日常管理动作（如：审批、跨部门协作、知识共享、任务指派）均通过数字化工具（如：钉钉、飞书、企业微信或专业办公系统）沉淀。信息流转不再依赖于\"人找人\"，而是通过系统实现的自动化提醒和进度追踪，极大地降低了沟通的\"摩擦力\"。",
+                    "公司积极引导员工使用前沿技术工具（如：AI写作/绘图辅助、自动化营销机器人、数据分析插件等）来赋能业务。这些工具不仅提高了员工的单位产出（人效），更让原本需要高阶专业人才才能完成的任务，通过工具辅助变成了普通员工也能达到的标准动作。"
+                ]
+            },
+            {
+                "dimension": "竞争壁垒",
+                "questions": [
+                    "公司能够清晰识别出哪些是竞争对手\"花钱也买不走\"的核心资产（如：独特的品牌心智、专利技术、行业标准话语权、或者独有的特许经营权），并有专门的预算和动作去持续强化、保护这些资产，使其随时间推移不断增厚。",
+                    "公司在交付产品或服务的过程中，刻意增加了与客户的\"粘性深度\"。通过服务集成、数据连接、会员情感联结或业务流程的深度嵌入，使得客户如果转向竞争对手，将面临极大的时间成本、经济损失或心理压力。",
+                    "公司不仅关注利润，更关注\"效率壁垒\"。我们通过工艺改进、供应链优化或组织提效，使得公司在维持同等价值产出的前提下，具备比行业平均水平更低的成本结构，或者更快的周转速度，让对手在发动价格战时无从下手。"
+                ]
+            }
+        ];
+
+        // 获取题目数据
+        function getQuestionsData(businessType) {
+            if (businessType === 'B端业务') {
+                return tobQuestionsData["B端业务自测题"];
+            } else if (businessType === 'C端业务') {
+                return tocQuestionsData;
+            }
+            return [];
+        }
+
+        // 获取所有题目的得分（用于导出）
+        function getAllQuestionScores(item) {
+            const results = item.results || {};
+            const questionAnswers = results.questionAnswers || {};
+            const businessType = item.businessType || '';
+            const questionsData = getQuestionsData(businessType);
+            
+            const scores = {};
+            
+            // 方法1：从题目数据中提取（如果业务类型正确）
+            if (questionsData && questionsData.length > 0) {
+                questionsData.forEach(dimData => {
+                    const dimName = dimensionNameMap[dimData.dimension]?.name || dimData.dimension;
+                    const dimAnswers = questionAnswers[dimName] || [];
+                    
+                    // 遍历该维度的所有题目
+                    dimData.questions.forEach((question, qIndex) => {
+                        const score = dimAnswers[qIndex] !== undefined ? dimAnswers[qIndex] : '';
+                        const key = `${dimName}_题目${qIndex + 1}`;
+                        scores[key] = score;
+                    });
+                });
+            } else {
+                // 方法2：如果questionsData为空（业务类型未知），直接从questionAnswers中提取
+                // questionAnswers的键是维度名称，值是题目得分数组
+                Object.keys(questionAnswers).forEach(dimName => {
+                    const dimAnswers = questionAnswers[dimName] || [];
+                    if (Array.isArray(dimAnswers)) {
+                        dimAnswers.forEach((score, qIndex) => {
+                            const key = `${dimName}_题目${qIndex + 1}`;
+                            scores[key] = score !== undefined && score !== null ? score : '';
+                        });
+                    }
+                });
+            }
+            
+            return scores;
+        }
+
+        // 检查登录状态
+        function checkLogin() {
+            const isLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
+            if (isLoggedIn) {
+                showAdminScreen();
+            } else {
+                showLoginScreen();
+            }
+        }
+
+        // 显示登录界面
+        function showLoginScreen() {
+            document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('adminScreen').style.display = 'none';
+        }
+
+        // 显示管理界面
+        function showAdminScreen() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('adminScreen').style.display = 'block';
+            loadData();
+        }
+
+        // 处理登录
+        function handleLogin() {
+            const password = document.getElementById('passwordInput').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (password === ADMIN_PASSWORD) {
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                errorDiv.textContent = '';
+                showAdminScreen();
+            } else {
+                errorDiv.textContent = '密码错误，请重试';
+            }
+        }
+
+        // 退出登录
+        function logout() {
+            sessionStorage.removeItem('adminLoggedIn');
+            showLoginScreen();
+            document.getElementById('passwordInput').value = '';
+        }
+
+        // 加载数据
+        async function loadData() {
+            if (supabaseAdmin) {
+                // 从 Supabase 加载数据
+                try {
+                    const { data, error } = await supabaseAdmin
+                        .from('assessments')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    
+                    if (error) {
+                        throw error;
+                    }
+                    
+                    // 转换数据格式以兼容现有代码
+                    allData = (data || []).map(item => ({
+                        id: item.id,
+                        userName: item.user_name,
+                        companyName: item.company_name,
+                        userPhone: item.user_phone,
+                        businessType: item.business_type,
+                        submitTime: item.submit_time,
+                        results: item.results
+                    }));
+                    
+                    filteredData = [...allData];
+                    renderTable();
+                    updateStats();
+                    console.log('从 Supabase 加载了', allData.length, '条数据');
+                } catch (error) {
+                    console.error('从 Supabase 加载数据失败:', error);
+                    // 如果 Supabase 失败，尝试使用 localStorage
+                    loadDataFromLocalStorage();
+                }
+            } else {
+                // 使用 localStorage
+                loadDataFromLocalStorage();
+            }
+        }
+        
+        // 从 localStorage 加载数据（备用方案）
+        function loadDataFromLocalStorage() {
+            try {
+                const storedData = localStorage.getItem('assessmentUserData');
+                if (storedData) {
+                    allData = JSON.parse(storedData);
+                } else {
+                    allData = [];
+                }
+                filteredData = [...allData].reverse(); // 最新的在前
+                renderTable();
+                updateStats();
+                console.log('从 localStorage 加载了', allData.length, '条数据');
+            } catch (e) {
+                console.error('加载数据失败:', e);
+                allData = [];
+                filteredData = [];
+                renderTable();
+                updateStats();
+            }
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            document.getElementById('totalCount').textContent = allData.length;
+            const bCount = allData.filter(d => d.businessType === 'B端业务').length;
+            const cCount = allData.filter(d => d.businessType === 'C端业务').length;
+            document.getElementById('bCount').textContent = bCount;
+            document.getElementById('cCount').textContent = cCount;
+        }
+
+        // 过滤数据
+        function filterData() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            if (!searchText) {
+                filteredData = [...allData].reverse();
+            } else {
+                filteredData = allData.filter(item => {
+                    return (
+                        (item.userName && item.userName.toLowerCase().includes(searchText)) ||
+                        (item.companyName && item.companyName.toLowerCase().includes(searchText)) ||
+                        (item.userPhone && item.userPhone.includes(searchText))
+                    );
+                }).reverse();
+            }
+            renderTable();
+        }
+
+        // 渲染表格
+        function renderTable() {
+            const tbody = document.getElementById('dataTableBody');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            tbody.innerHTML = filteredData.map((item, index) => {
+                const results = item.results || {};
+                const cbi = results.CBI !== undefined ? results.CBI.toFixed(2) : '-';
+                const enterpriseType = results.enterpriseType || '-';
+                
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.submitTime || '-'}</td>
+                        <td>${item.userName || '-'}</td>
+                        <td>${item.companyName || '-'}</td>
+                        <td>${item.userPhone || '-'}</td>
+                        <td>${item.businessType || '-'}</td>
+                        <td>${cbi}</td>
+                        <td>${enterpriseType}</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn btn-secondary" onclick="viewDetail(${item.id})">查看</button>
+                                <button class="btn btn-danger" onclick="deleteData(${item.id})">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 查看详情
+        function viewDetail(id) {
+            const item = allData.find(d => d.id === id);
+            if (!item) return;
+
+            const results = item.results || {};
+            const dimensionScores = results.dimensionScores || {};
+            
+            const detailHTML = `
+                <div class="detail-section">
+                    <h3>基本信息</h3>
+                    <div class="detail-row">
+                        <div class="detail-label">提交时间</div>
+                        <div class="detail-value">${item.submitTime || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">姓名</div>
+                        <div class="detail-value">${item.userName || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">公司名称</div>
+                        <div class="detail-value">${item.companyName || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">联系电话</div>
+                        <div class="detail-value">${item.userPhone || '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">业务类型</div>
+                        <div class="detail-value">${item.businessType || '-'}</div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>测评结果</h3>
+                    <div class="detail-row">
+                        <div class="detail-label">业绩均分 (P_avg)</div>
+                        <div class="detail-value">${results.P_avg !== undefined ? results.P_avg.toFixed(2) : '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">组织均分 (O_avg)</div>
+                        <div class="detail-value">${results.O_avg !== undefined ? results.O_avg.toFixed(2) : '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">壁垒均分 (B_avg)</div>
+                        <div class="detail-value">${results.B_avg !== undefined ? results.B_avg.toFixed(2) : '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">数字化均分 (D_avg)</div>
+                        <div class="detail-value">${results.D_avg !== undefined ? results.D_avg.toFixed(2) : '-'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">CBI指数</div>
+                        <div class="detail-value"><strong>${results.CBI !== undefined ? results.CBI.toFixed(2) : '-'}</strong></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">企业类型</div>
+                        <div class="detail-value"><strong>${results.enterpriseType || '-'}</strong></div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">类型描述</div>
+                        <div class="detail-value">${results.typeDesc || '-'}</div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>各维度得分</h3>
+                    ${Object.entries(dimensionScores).map(([dim, score]) => {
+                        let badgeClass = 'score-medium';
+                        if (score >= 7) badgeClass = 'score-high';
+                        else if (score < 5) badgeClass = 'score-low';
+                        return `
+                            <div class="detail-row">
+                                <div class="detail-label">${dim}</div>
+                                <div class="detail-value">
+                                    <span class="score-badge ${badgeClass}">${score.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+
+                <div class="detail-section">
+                    <h3>各题目得分</h3>
+                    ${(() => {
+                        const results = item.results || {};
+                        const questionAnswers = results.questionAnswers || {};
+                        const businessType = item.businessType || '';
+                        const questionsData = getQuestionsData(businessType);
+                        let html = '';
+                        
+                        questionsData.forEach(dimData => {
+                            const dimName = dimensionNameMap[dimData.dimension]?.name || dimData.dimension;
+                            const dimAnswers = questionAnswers[dimName] || [];
+                            
+                            html += `<div style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px;">`;
+                            html += `<h4 style="color: #667eea; margin-bottom: 10px;">${dimName}结构</h4>`;
+                            
+                            dimData.questions.forEach((question, qIndex) => {
+                                const score = dimAnswers[qIndex] !== undefined ? dimAnswers[qIndex] : '-';
+                                let badgeClass = 'score-medium';
+                                if (score >= 7) badgeClass = 'score-high';
+                                else if (score < 5) badgeClass = 'score-low';
+                                
+                                html += `
+                                    <div class="detail-row" style="margin-bottom: 10px;">
+                                        <div class="detail-label" style="width: 100%; margin-bottom: 5px;">
+                                            <strong>题目${qIndex + 1}:</strong> ${question}
+                                        </div>
+                                        <div class="detail-value" style="width: 100%;">
+                                            <span class="score-badge ${badgeClass}">得分: ${score}</span>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            
+                            html += `</div>`;
+                        });
+                        
+                        return html || '<p style="color: #999;">暂无题目得分数据</p>';
+                    })()}
+                </div>
+            `;
+
+            document.getElementById('detailContent').innerHTML = detailHTML;
+            document.getElementById('detailModal').style.display = 'block';
+        }
+
+        // 关闭详情模态框
+        function closeDetailModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
+        // 删除数据
+        async function deleteData(id) {
+            if (!confirm('确定要删除这条数据吗？此操作不可恢复。')) {
+                return;
+            }
+            
+            if (supabaseAdmin) {
+                // 从 Supabase 删除
+                try {
+                    const { error } = await supabaseAdmin
+                        .from('assessments')
+                        .delete()
+                        .eq('id', id);
+                    
+                    if (error) {
+                        throw error;
+                    }
+                    
+                    console.log('已从 Supabase 删除数据 ID:', id);
+                    // 重新加载数据
+                    await loadData();
+                } catch (error) {
+                    console.error('从 Supabase 删除数据失败:', error);
+                    alert('删除失败：' + error.message);
+                    // 如果 Supabase 失败，尝试从 localStorage 删除
+                    deleteFromLocalStorage(id);
+                }
+            } else {
+                // 从 localStorage 删除
+                deleteFromLocalStorage(id);
+            }
+        }
+        
+        // 从 localStorage 删除数据（备用方案）
+        function deleteFromLocalStorage(id) {
+            allData = allData.filter(d => d.id !== id);
+            localStorage.setItem('assessmentUserData', JSON.stringify(allData));
+            loadData();
+        }
+
+        // 导出JSON
+        function exportToJSON() {
+            const dataStr = JSON.stringify(allData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `测评数据_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 导出CSV
+        function exportToCSV() {
+            // 获取所有可能的题目列（始终从题目模板中生成，确保包含所有列）
+            let allQuestionHeadersSet = new Set();
+            
+            // 始终从题目模板中生成所有可能的题目列（不依赖数据）
+            // 遍历所有业务类型，生成所有可能的题目列
+            ['B端业务', 'C端业务'].forEach(businessType => {
+                const questionsData = getQuestionsData(businessType);
+                if (questionsData && questionsData.length > 0) {
+                    questionsData.forEach(dimData => {
+                        const dimName = dimensionNameMap[dimData.dimension]?.name || dimData.dimension;
+                        if (dimData.questions && dimData.questions.length > 0) {
+                            dimData.questions.forEach((question, qIndex) => {
+                                const key = `${dimName}_题目${qIndex + 1}`;
+                                allQuestionHeadersSet.add(key);
+                            });
+                        }
+                    });
+                }
+            });
+            
+            // 同时从实际数据中收集，确保包含数据中可能存在的额外列
+            allData.forEach(item => {
+                const questionScores = getAllQuestionScores(item);
+                Object.keys(questionScores).forEach(key => allQuestionHeadersSet.add(key));
+            });
+            
+            const allQuestionHeaders = Array.from(allQuestionHeadersSet).sort();
+            
+            // 如果题目列为空，使用备用方案
+            if (allQuestionHeaders.length === 0) {
+                const fallbackHeaders = [];
+                // 手动生成所有可能的题目列
+                const dimensions = ['需求', '价值', '渠道', '壁垒', '管理', '能力', '激励', '数字化转型'];
+                dimensions.forEach(dim => {
+                    for (let i = 1; i <= 3; i++) {
+                        fallbackHeaders.push(`${dim}_题目${i}`);
+                    }
+                });
+                if (fallbackHeaders.length > 0) {
+                    allQuestionHeaders.push(...fallbackHeaders);
+                } else {
+                    alert('错误：无法生成题目列！\n请检查题目数据是否正确加载。\n\n尝试重新加载页面。');
+                    return;
+                }
+            }
+            // 基础列
+            const baseHeaders = ['提交时间', '姓名', '公司名称', '联系电话', '业务类型', '业绩均分', '组织均分', '壁垒均分', '数字化均分', 'CBI指数', '企业类型'];
+            
+            // 确保题目列被正确添加到headers中
+            const headers = [];
+            headers.push(...baseHeaders);
+            headers.push(...allQuestionHeaders);
+
+            const rows = allData.map((item, index) => {
+                const results = item.results || {};
+                const questionScores = getAllQuestionScores(item);
+                
+                const baseRow = [
+                    item.submitTime || '',
+                    item.userName || '',
+                    item.companyName || '',
+                    item.userPhone || '',
+                    item.businessType || '',
+                    results.P_avg !== undefined ? results.P_avg.toFixed(2) : '',
+                    results.O_avg !== undefined ? results.O_avg.toFixed(2) : '',
+                    results.B_avg !== undefined ? results.B_avg.toFixed(2) : '',
+                    results.D_avg !== undefined ? results.D_avg.toFixed(2) : '',
+                    results.CBI !== undefined ? results.CBI.toFixed(2) : '',
+                    results.enterpriseType || ''
+                ];
+
+                // 添加题目得分
+                const questionRow = allQuestionHeaders.map(key => {
+                    const value = questionScores[key] !== undefined && questionScores[key] !== '' ? questionScores[key] : '';
+                    return value;
+                });
+
+                return [...baseRow, ...questionRow];
+            });
+
+            // 验证rows长度与headers长度匹配
+            if (rows.length > 0 && rows[0].length !== headers.length) {
+                alert('错误：CSV行长度不匹配！\n表头数量: ' + headers.length + '\n第一行数据数量: ' + rows[0].length);
+            }
+            
+            // 确保所有行都有正确的列数
+            const fixedRows = rows.map(row => {
+                if (row.length !== headers.length) {
+                    // 补齐行数据以匹配headers长度
+                    const fixedRow = [...row];
+                    while (fixedRow.length < headers.length) {
+                        fixedRow.push('');
+                    }
+                    return fixedRow.slice(0, headers.length);
+                }
+                return row;
+            });
+            
+            // 生成CSV内容，确保表头包含所有列
+            const csvHeaderLine = headers.map(h => `"${String(h).replace(/"/g, '""')}"`).join(',');
+            const csvDataLines = fixedRows.map(row => 
+                row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+            );
+            const csvContent = [csvHeaderLine, ...csvDataLines].join('\n');
+            
+            // 添加BOM以支持Excel正确显示中文
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `测评数据_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 显示飞书配置
+        function showFeishuConfig() {
+            // 加载已保存的配置
+            const savedConfig = localStorage.getItem('feishuConfig');
+            if (savedConfig) {
+                const config = JSON.parse(savedConfig);
+                document.getElementById('feishuAppId').value = config.appId || '';
+                document.getElementById('feishuAppSecret').value = config.appSecret || '';
+                document.getElementById('feishuAppToken').value = config.appToken || '';
+                document.getElementById('feishuTableId').value = config.tableId || '';
+            }
+            document.getElementById('feishuModal').style.display = 'block';
+        }
+
+        // 关闭飞书配置模态框
+        function closeFeishuModal() {
+            document.getElementById('feishuModal').style.display = 'none';
+        }
+
+        // 导出到飞书
+        async function exportToFeishu() {
+            const config = {
+                appId: document.getElementById('feishuAppId').value.trim(),
+                appSecret: document.getElementById('feishuAppSecret').value.trim(),
+                appToken: document.getElementById('feishuAppToken').value.trim(),
+                tableId: document.getElementById('feishuTableId').value.trim()
+            };
+
+            if (!config.appId || !config.appSecret || !config.appToken || !config.tableId) {
+                alert('请填写完整的配置信息');
+                return;
+            }
+
+            // 保存配置
+            localStorage.setItem('feishuConfig', JSON.stringify(config));
+
+            // 显示加载状态
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '导出中...';
+            btn.disabled = true;
+
+            try {
+                // 获取访问令牌
+                const tokenResponse = await fetch('https://open.feishu.cn/open-apis/auth/v3/app_access_token/internal/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        app_id: config.appId,
+                        app_secret: config.appSecret
+                    })
+                });
+
+                const tokenData = await tokenResponse.json();
+                if (tokenData.code !== 0) {
+                    throw new Error(tokenData.msg || '获取访问令牌失败');
+                }
+
+                const accessToken = tokenData.app_access_token;
+
+                // 转换数据格式
+                const records = allData.map(item => {
+                    const results = item.results || {};
+                    const dimensionScores = results.dimensionScores || {};
+                    const questionScores = getAllQuestionScores(item);
+                    
+                    // 基础字段
+                    const fields = {
+                        '提交时间': item.submitTime || '',
+                        '姓名': item.userName || '',
+                        '公司名称': item.companyName || '',
+                        '联系电话': item.userPhone || '',
+                        '业务类型': item.businessType || '',
+                        '业绩均分': results.P_avg !== undefined ? results.P_avg.toFixed(2) : '',
+                        '组织均分': results.O_avg !== undefined ? results.O_avg.toFixed(2) : '',
+                        '壁垒均分': results.B_avg !== undefined ? results.B_avg.toFixed(2) : '',
+                        '数字化均分': results.D_avg !== undefined ? results.D_avg.toFixed(2) : '',
+                        'CBI指数': results.CBI !== undefined ? results.CBI.toFixed(2) : '',
+                        '企业类型': results.enterpriseType || '',
+                        '需求结构得分': dimensionScores['需求'] !== undefined ? dimensionScores['需求'].toFixed(2) : '',
+                        '价值结构得分': dimensionScores['价值'] !== undefined ? dimensionScores['价值'].toFixed(2) : '',
+                        '渠道结构得分': dimensionScores['渠道'] !== undefined ? dimensionScores['渠道'].toFixed(2) : '',
+                        '壁垒结构得分': dimensionScores['壁垒'] !== undefined ? dimensionScores['壁垒'].toFixed(2) : '',
+                        '管理结构得分': dimensionScores['管理'] !== undefined ? dimensionScores['管理'].toFixed(2) : '',
+                        '能力结构得分': dimensionScores['能力'] !== undefined ? dimensionScores['能力'].toFixed(2) : '',
+                        '激励结构得分': dimensionScores['激励'] !== undefined ? dimensionScores['激励'].toFixed(2) : '',
+                        '数字化转型得分': dimensionScores['数字化转型'] !== undefined ? dimensionScores['数字化转型'].toFixed(2) : ''
+                    };
+                    
+                    // 添加所有题目的得分
+                    Object.keys(questionScores).forEach(key => {
+                        const score = questionScores[key];
+                        if (score !== undefined && score !== '') {
+                            fields[key] = String(score);
+                        }
+                    });
+                    
+                    return { fields };
+                });
+
+                // 分批写入（每次最多100条）
+                const batchSize = 100;
+                let successCount = 0;
+                let failCount = 0;
+
+                for (let i = 0; i < records.length; i += batchSize) {
+                    const batch = records.slice(i, i + batchSize);
+                    try {
+                        const response = await fetch(`https://open.feishu.cn/open-apis/bitable/v1/apps/${config.appToken}/tables/${config.tableId}/records`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                records: batch
+                            })
+                        });
+
+                        const data = await response.json();
+                        if (data.code === 0) {
+                            successCount += batch.length;
+                        } else {
+                            throw new Error(data.msg || '写入数据失败');
+                        }
+                    } catch (error) {
+                        failCount += batch.length;
+                        console.error(`批次 ${Math.floor(i / batchSize) + 1} 导出失败:`, error);
+                    }
+                }
+
+                if (successCount > 0) {
+                    alert(`导出成功！\n总计: ${records.length} 条\n成功: ${successCount} 条\n失败: ${failCount} 条`);
+                    closeFeishuModal();
+                } else {
+                    alert('导出失败，请检查配置信息和网络连接');
+                }
+            } catch (error) {
+                alert('导出失败: ' + error.message);
+                console.error('导出错误:', error);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // 清空所有数据
+        async function clearAllData() {
+            if (!confirm('确定要清空所有数据吗？此操作不可恢复！')) {
+                return;
+            }
+            if (!confirm('再次确认：这将删除所有测评数据，请确保已备份！')) {
+                return;
+            }
+            
+            if (supabaseAdmin) {
+                // 从 Supabase 删除所有数据
+                try {
+                    const { error } = await supabaseAdmin
+                        .from('assessments')
+                        .delete()
+                        .neq('id', 0); // 删除所有记录（id 不可能为 0）
+                    
+                    if (error) {
+                        throw error;
+                    }
+                    
+                    console.log('已从 Supabase 清空所有数据');
+                    allData = [];
+                    filteredData = [];
+                    renderTable();
+                    updateStats();
+                    alert('所有数据已清空');
+                } catch (error) {
+                    console.error('从 Supabase 清空数据失败:', error);
+                    alert('清空失败：' + error.message);
+                    // 如果 Supabase 失败，尝试清空 localStorage
+                    clearLocalStorage();
+                }
+            } else {
+                // 清空 localStorage
+                clearLocalStorage();
+            }
+        }
+        
+        // 清空 localStorage（备用方案）
+        function clearLocalStorage() {
+            localStorage.removeItem('assessmentUserData');
+            allData = [];
+            filteredData = [];
+            renderTable();
+            updateStats();
+            alert('所有数据已清空');
+        }
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const detailModal = document.getElementById('detailModal');
+            const feishuModal = document.getElementById('feishuModal');
+            if (event.target === detailModal) {
+                closeDetailModal();
+            }
+            if (event.target === feishuModal) {
+                closeFeishuModal();
+            }
+        }
+
+        // 回车键登录
+        document.getElementById('passwordInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+
+        // 初始化
+        checkLogin();
+    </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+# Supabase 配置文件（包含敏感信息）
+config.js
+
+# Python 相关
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# 数据文件
+*.csv
+*.xlsx
+*.xls
+*.docx
+*.doc
+
+# 开发文件
+convert_excel_to_json.py
+parse_csv_to_json.py
+read_csv_questions.py
+update_questions.py
+
+# 文档文件（可选，如果需要保留可以注释掉）
+*.md
+!README.md
+!SUPABASE_SETUP_GUIDE.md
+!配置说明.md
+!DEPLOYMENT_GUIDE.md
+
+# 系统文件
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
