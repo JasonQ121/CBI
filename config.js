@@ -1,7 +1,7 @@
 const SUPABASE_CONFIG = {
     url: 'https://udcrdkncpnefqllehfkx.supabase.co',
     publishableKey: 'sb_publishable_55o0WC75x4Y8Ua1AVbY4bw_x6_v7qVD',
-    secretKey: 'sb_secret_30l-QN-KvhnTkq-aaeJI3Q_FHRE79VL'
+    service_roleKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkY3Jka25jcG5lZnFsbGVoZmt4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODMwMDgxNCwiZXhwIjoyMDgzODc2ODE0fQ.eFUAdF_PJG1MfaoXo9hJvLGFbNt7DKZFmKMSo2QLqKo'
 };
 
 if (typeof window !== 'undefined') {
