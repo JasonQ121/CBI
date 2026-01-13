@@ -485,11 +485,11 @@
         
         // Supabase 客户端初始化（使用 secret key 用于管理后台）
         let supabaseAdmin = null;
-        if (typeof window.SUPABASE_CONFIG !== 'undefined' && window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.secretKey) {
+           if (typeof window.SUPABASE_CONFIG !== 'undefined' && window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.publishableKey) {
             try {
                 supabaseAdmin = supabase.createClient(
                     window.SUPABASE_CONFIG.url,
-                    window.SUPABASE_CONFIG.secretKey
+                    window.SUPABASE_CONFIG.publishableKey
                 );
                 console.log('Supabase 管理客户端初始化成功');
             } catch (error) {
