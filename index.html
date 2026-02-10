@@ -655,6 +655,193 @@
             font-weight: bold;
             font-size: 20px;
         }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 16px;
+                border-radius: 12px;
+            }
+            h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+            h2 {
+                font-size: 20px;
+                margin-bottom: 16px;
+            }
+            /* 业务类型选择：小屏改为竖排 */
+            .business-type-options {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 16px;
+                margin: 24px 0;
+            }
+            .business-type-card {
+                max-width: none;
+                flex: none;
+                padding: 24px 20px;
+            }
+            .business-type-card h3 {
+                font-size: 22px;
+                margin-bottom: 10px;
+            }
+            .business-type-card p {
+                font-size: 14px;
+            }
+            /* 答题界面 */
+            .question-text {
+                font-size: 16px;
+                margin-bottom: 20px;
+                line-height: 1.7;
+            }
+            .slider-value {
+                font-size: 28px;
+                margin: 16px 0;
+            }
+            .slider-container {
+                margin: 20px 0;
+            }
+            .btn {
+                padding: 14px 24px;
+                font-size: 16px;
+                min-height: 44px;
+                margin: 16px auto;
+            }
+            .navigation-buttons {
+                margin-top: 24px;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+            .navigation-buttons .btn {
+                margin: 0;
+                flex: 1;
+                min-width: 120px;
+            }
+            /* 结果页：小屏改为单列 */
+            .result-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                margin: 20px 0;
+            }
+            .result-card {
+                padding: 20px;
+            }
+            .result-card h3 {
+                font-size: 18px;
+                margin-bottom: 12px;
+            }
+            .chart-container {
+                height: 260px;
+                margin: 16px 0;
+            }
+            .cbi-score {
+                font-size: 48px;
+                margin: 16px 0;
+            }
+            .cbi-gauge {
+                margin: 20px 0;
+            }
+            .diagnosis-result {
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 12px;
+            }
+            .diagnosis-type {
+                font-size: 28px;
+                margin: 16px 0;
+            }
+            .diagnosis-desc {
+                font-size: 16px;
+                line-height: 1.7;
+            }
+            /* 四象限图区域缩小留白 */
+            .quadrant-chart {
+                padding: 30px 20px 30px 20px;
+                margin: 16px 0;
+                height: auto;
+                min-height: 320px;
+            }
+            .quadrant-chart-wrap {
+                margin-left: 28px !important;
+                margin-right: 28px !important;
+            }
+            .quadrant-chart-area {
+                margin: 16px 0 !important;
+            }
+            .dimension-scores {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            .dimension-score-item {
+                padding: 12px;
+            }
+            .dimension-score-item .name {
+                font-size: 13px;
+            }
+            .dimension-score-item .score {
+                font-size: 20px;
+            }
+            /* 首页说明区块 */
+            .intro-section,
+            .instruction-section,
+            .scoring-section {
+                padding: 16px;
+                margin-bottom: 24px;
+                border-radius: 12px;
+            }
+            .intro-section h2,
+            .instruction-section h2,
+            .scoring-section h2 {
+                font-size: 18px;
+                margin-bottom: 12px;
+            }
+            .intro-section p,
+            .instruction-section ul,
+            .scoring-section ul {
+                font-size: 15px;
+            }
+            /* 留资表单 */
+            .form-group {
+                margin-bottom: 20px;
+            }
+            .form-group input {
+                padding: 12px 14px;
+                font-size: 16px; /* 避免 iOS 缩放 */
+            }
+        }
+
+        /* 超小屏（如窄手机）微调 */
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+            .container {
+                padding: 12px;
+            }
+            h1 {
+                font-size: 22px;
+            }
+            .business-type-card {
+                padding: 20px 16px;
+            }
+            .business-type-card h3 {
+                font-size: 20px;
+            }
+            .result-card {
+                padding: 16px;
+            }
+            .dimension-scores {
+                grid-template-columns: 1fr;
+            }
+            .quadrant-chart-wrap {
+                margin-left: 20px !important;
+                margin-right: 20px !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -680,7 +867,6 @@
             <div class="instruction-section">
                 <h2>📋 测评说明</h2>
                 <ul>
-                    <li>测评对象：适用于 To C 业务和 To B 业务的企业</li>
                     <li>测评维度：8个核心结构维度，每个维度3道题目，共24道题</li>
                     <li>预计时长：10-15分钟</li>
                     <li>结果呈现：包含四象限定位分析、CBI竞争力指数、竞争力雷达图和详细得分</li>
@@ -716,6 +902,10 @@
                     <h3>To B 业务</h3>
                     <p>面向企业的业务模式</p>
                 </div>
+                <div class="business-type-card" data-type="tog">
+                    <h3>To G 业务</h3>
+                    <p>面向政企的业务模式</p>
+                </div>
             </div>
             <button class="btn" id="startBtn" disabled>进入测评</button>
         </div>
@@ -742,13 +932,13 @@
             <div class="result-grid">
                 <div class="result-card">
                     <h3>四宫格定位分析</h3>
-                    <div style="position: relative; margin: 30px 0;">
+                    <div class="quadrant-chart-area" style="position: relative; margin: 30px 0;">
                         <!-- 业绩能力标签（左侧） -->
                         <div style="position: absolute; left: 0; top: 50%; transform: translateY(-50%) rotate(-90deg); font-size: 16px; font-weight: bold; color: #333; white-space: nowrap;">
                             业绩能力
                         </div>
                         <!-- 图表容器 -->
-                        <div style="margin-left: 50px; margin-right: 50px; position: relative;">
+                        <div class="quadrant-chart-wrap" style="margin-left: 50px; margin-right: 50px; position: relative;">
                             <!-- 组织能力标签（顶部） -->
                             <div style="text-align: center; margin-bottom: 10px; font-size: 16px; font-weight: bold; color: #333;">
                                 组织能力
@@ -934,6 +1124,74 @@
             ]
         };
 
+        // 政企(To G)业务题目数据（来自政企市场竞争力自测问卷）
+        const togQuestionsData = [
+            {
+                "dimension": "需求结构",
+                "questions": [
+                    "政策红利识别与\"翻译\"能力： 具备将模糊的政策文件迅速转化为\"可落地、可结项、可盈利\"业务方案的能力。清晰掌握政府的预算流向，确保项目立项既符合宏观政绩，又符合公司盈利目标。",
+                    "复杂决策链的风险对冲： 透彻理解国企/政府的集体决策逻辑。不仅对接经办人，更能前置化解内审、纪检及关键决策人的核心顾虑，在方案阶段就规避可能导致项目流产的政治或合规风险。",
+                    "需求定义的引导与标准化： 不盲目满足客户的所有碎片化需求。具备引导客户需求的能力，使个性化政务项目尽量向公司标准化产品靠拢，在满足公共利益的同时，严格控制自身的研发与交付成本。"
+                ]
+            },
+            {
+                "dimension": "价值结构",
+                "questions": [
+                    "\"政绩+效益\"的双重交付： 方案能同时展示两种账本：一是给客户看的\"社会治理效能\"或\"创新亮点\"；二是给公司看的\"可持续营收模式\"。拒绝赔本赚吆喝，确保每个项目都有清晰的毛利空间。",
+                    "极致的合规安全与\"免责\"资产： 产品与服务符合最严格的行业资质和审计要求。核心价值在于：不仅事办成了，且过程无瑕疵，能帮客户有效规避审计风险，提供一种确定性的\"政治安全感\"。",
+                    "信创适配与国产化领先： 具备极强的国产化替代（信创）能力。这不仅是政治对齐，更是核心商业筹码。客户因为\"非用不可\"且\"用着放心\"而愿意支付合理溢价，形成稳固的竞争优势。"
+                ]
+            },
+            {
+                "dimension": "渠道结构",
+                "questions": [
+                    "高质量准入与\"白名单\"优势： 不依赖脆弱的私人关系，而是通过高等级资质、履约信用和标杆示范项目，进入政府/国企的核心供应商白名单。这种基于信用的准入壁垒，确保了商机的持续性。",
+                    "生态整合与\"总包\"话语权： 具备整合上下游资源的能力。作为\"项目大脑\"负责高利润的方案与管理，将低利润、重资产的环节外包，以轻资产模式掌握渠道话语权和利润分配权。",
+                    "商机全生命周期的\"回款管控\"： 从渠道拓展阶段就具备筛选能力，优先选择预算充足、信誉良好的部门。对每个渠道带来的线索都有严密的财务评估，确保商机最终能转化为真实的现金流。"
+                ]
+            },
+            {
+                "dimension": "管理结构",
+                "questions": [
+                    "针对政企节奏的\"战备型\"组织： 组织具备极强弹性，能适应政企业务\"突发性强、周期长、流程严\"的特点。在关键节点能瞬间调动技术与法务资源攻坚，确保在长跑中不掉队。",
+                    "财务纪律与长周期现金流管理： 针对回款慢的痛点，内部建立了稳健的财务缓冲机制。能以极高效率完成结项审计和发票流转，确保在漫长的合同周期内，企业依然拥有健康的血液循环。",
+                    "合规导向的透明化协作： 内部协作全过程留痕，符合最严格的外部巡视和审计要求。这种\"自带防弹衣\"的管理模式，能快速取得客户信任并大幅降低应对外部检查的沟通成本。"
+                ]
+            },
+            {
+                "dimension": "能力结构",
+                "questions": [
+                    "行业标准的话语权与\"智库\"赋能： 被公认为该领域的专家。不仅卖产品，更能通过深度调研和建议，影响客户对该类业务的评价标准。这种\"专业权威\"在竞标中拥有天然的降维打击优势。",
+                    "复杂项目的\"工业化\"交付与兜底： 具备极强的组织记忆和风控能力。无论人员如何变动，大项目都能按 SOP 稳健交付。在极端情况下具备\"兜底\"能力，确保不发生信誉危机。",
+                    "专业深度与跨界整合的复合力： 团队成员不仅精通技术，更懂公文逻辑与政务礼仪。能以极高的专业素养在复杂的政企环境中游刃有余，降低由于\"文化隔阂\"导致的沟通失败。"
+                ]
+            },
+            {
+                "dimension": "激励结构",
+                "questions": [
+                    "合规经营与长期绩效的深度对齐： 激励机制严禁\"唯业绩论\"，将合规经营、回款质量、客户长期满意度作为核心权重。引导员工在安全的前提下追求高质量的增长。",
+                    "团队协作与\"战役奖励\"： 针对长周期、跨部门的大型项目，建立了公平的利益分享机制。确保后端技术与交付人员能与前台销售共享胜利果实，维持团队在长线作战中的士气。",
+                    "社会价值感与荣誉驱动： 通过强调项目的社会影响力（如民生改善、行业首创）激发员工的职业尊严感。团队以能承接国家或城市级重点工程为荣，具备极强的使命驱动力。"
+                ]
+            },
+            {
+                "dimension": "数字化转型",
+                "questions": [
+                    "全生命周期留痕与\"事实管理\"能力： 关键节点实现数字化记录。管理层能实时调取项目进度与合规数据，决策建立在事实基础之上，消灭内部信息黑箱，应对外部监管。",
+                    "流程在线化与\"去摩擦\"协同： 内部审批、任务指派、知识共享深度依赖数字化工具。信息流转不再依赖\"人找人\"，极大地降低了长周期项目中的跨部门沟通成本。",
+                    "技术杠杆赋能与\"专业平权化\"： 纯熟运用 AI 工具辅助业务（如标书研读、方案撰写）。工具辅助让普通员工也能输出专家级内容，大幅提升了人均产出并降低了对明星员工的依赖。"
+                ]
+            },
+            {
+                "dimension": "竞争壁垒",
+                "questions": [
+                    "核心资产的\"复利\"与持续增厚： 清晰识别对手买不走的筹码（如专有安全资质、深度业务 Know-how）。持续投入资源强化资产，使对手的追赶成本远高于其潜在收益。",
+                    "业务逻辑的深度嵌入与\"协同惯性\"： 服务已深度嵌入客户的日常运营或行政流程中。由于更换供应商意味着极高的风险与行政调整成本，这种\"路径依赖\"构成了最稳固的护城河。",
+                    "结构性的效率领先与盈利护城河： 核心竞争力在于\"比同行更懂如何低成本交付高质量项目\"。通过高效的组织效率建立了成本安全垫，在面对价格竞争时依然能保持合理的利润。"
+                ]
+            }
+        ];
+
         // C端业务题目数据
         const tocQuestionsData = [
             {
@@ -1005,7 +1263,8 @@
         // 题目模板
         const questionsTemplate = {
             toc: [],
-            tob: []
+            tob: [],
+            tog: []
         };
         
         // 初始化To B题目
@@ -1081,9 +1340,33 @@
             console.log('To C题目初始化完成，共', questionsTemplate.toc.length, '道题');
         }
         
-        // 初始化To B和To C题目
+        // 初始化To G（政企）题目
+        function initToGQuestions() {
+            questionsTemplate.tog = [];
+            console.log('初始化To G题目，共', togQuestionsData.length, '个结构');
+            togQuestionsData.forEach(dimData => {
+                const dimInfo = dimensionNameMap[dimData.dimension];
+                if (dimInfo) {
+                    console.log(`处理结构: ${dimData.dimension} -> ${dimInfo.name} (索引: ${dimInfo.index}), 题目数: ${dimData.questions.length}`);
+                    dimData.questions.forEach((question, qIndex) => {
+                        questionsTemplate.tog.push({
+                            dimension: dimInfo.name,
+                            dimensionIndex: dimInfo.index,
+                            questionIndex: qIndex,
+                            question: question
+                        });
+                    });
+                } else {
+                    console.warn(`未找到映射的结构: ${dimData.dimension}`);
+                }
+            });
+            console.log('To G题目初始化完成，共', questionsTemplate.tog.length, '道题');
+        }
+        
+        // 初始化To B、To C和To G题目
         initToBQuestions();
         initToCQuestions();
+        initToGQuestions();
 
         // To C和To B题目都已内置，不需要从JSON加载
         // 注意：本地文件（file://协议）无法使用fetch，所以直接使用内置数据
@@ -1177,7 +1460,7 @@
                     card.classList.add('selected');
                     currentBusinessType = card.dataset.type;
                     // 设置全局变量，用于保存数据时使用
-                    window.selectedBusinessType = card.dataset.type === 'toc' ? 'C端业务' : 'B端业务';
+                    window.selectedBusinessType = card.dataset.type === 'toc' ? 'C端业务' : (card.dataset.type === 'tob' ? 'B端业务' : '政企业务');
                     startBtn.disabled = false;
                     
                     console.log('当前选择的业务类型:', currentBusinessType);
