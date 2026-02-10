@@ -483,9 +483,9 @@
         let allData = [];
         let filteredData = [];
         
-        // Supabase 客户端初始化（使用 secret key 用于管理后台）
+        // Supabase 客户端初始化（使用 publishable key，通过 RLS 策略控制权限）
         let supabaseAdmin = null;
-           if (typeof window.SUPABASE_CONFIG !== 'undefined' && window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.publishableKey) {
+        if (typeof window.SUPABASE_CONFIG !== 'undefined' && window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.publishableKey) {
             try {
                 supabaseAdmin = supabase.createClient(
                     window.SUPABASE_CONFIG.url,
@@ -861,6 +861,7 @@
                         <td>
                             <div class="action-btns">
                                 <button class="btn btn-secondary" onclick="viewDetail(${item.id})">查看</button>
+                                <button class="btn btn-secondary" onclick="downloadRecord(${item.id})">下载</button>
                                 <button class="btn btn-danger" onclick="deleteData(${item.id})">删除</button>
                             </div>
                         </td>
@@ -1168,6 +1169,62 @@
             const a = document.createElement('a');
             a.href = url;
             a.download = `测评数据_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 单条记录下载（CSV）
+        function downloadRecord(id) {
+            const item = allData.find(d => d.id === id);
+            if (!item) {
+                alert('未找到该条数据');
+                return;
+            }
+
+            const results = item.results || {};
+            const questionScores = getAllQuestionScores(item);
+            const questionHeaders = Object.keys(questionScores).sort();
+
+            // 基础列与批量导出保持一致
+            const baseHeaders = ['提交时间', '姓名', '公司名称', '联系电话', '业务类型', '业绩均分', '组织均分', '壁垒均分', '数字化均分', 'CBI指数', '企业类型'];
+            const headers = [...baseHeaders, ...questionHeaders];
+
+            const baseRow = [
+                item.submitTime || '',
+                item.userName || '',
+                item.companyName || '',
+                item.userPhone || '',
+                item.businessType || '',
+                results.P_avg !== undefined ? results.P_avg.toFixed(2) : '',
+                results.O_avg !== undefined ? results.O_avg.toFixed(2) : '',
+                results.B_avg !== undefined ? results.B_avg.toFixed(2) : '',
+                results.D_avg !== undefined ? results.D_avg.toFixed(2) : '',
+                results.CBI !== undefined ? results.CBI.toFixed(2) : '',
+                results.enterpriseType || ''
+            ];
+
+            const questionRow = questionHeaders.map(key => {
+                const value = questionScores[key] !== undefined && questionScores[key] !== '' ? questionScores[key] : '';
+                return value;
+            });
+
+            const row = [...baseRow, ...questionRow];
+
+            // 生成单条 CSV 内容
+            const escapeCell = (cell) => `"${String(cell).replace(/"/g, '""')}"`;
+            const csvHeaderLine = headers.map(escapeCell).join(',');
+            const csvDataLine = row.map(escapeCell).join(',');
+            const csvContent = [csvHeaderLine, csvDataLine].join('\n');
+
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+
+            const namePart = item.userName || '匿名';
+            const timePart = (item.submitTime || '').replace(/[^\d]/g, '') || new Date().toISOString().split('T')[0];
+            a.href = url;
+            a.download = `测评数据_单条_${namePart}_${timePart}.csv`;
             a.click();
             URL.revokeObjectURL(url);
         }
